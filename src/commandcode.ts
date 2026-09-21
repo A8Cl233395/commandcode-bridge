@@ -388,6 +388,13 @@ export class CommandCodeClient implements CommandCodeUpstream {
             model: body.params.model,
             ignoreCooldown: true,
           });
+        } else if (attempt === 0 && error instanceof NoAvailableCommandCodeCredentialError) {
+          // A cooldown is a preference, not a hard gate: when every credential is
+          // cooling down, serve with one anyway instead of failing the request.
+          credential = await this.router.select({
+            model: body.params.model,
+            ignoreCooldown: true,
+          });
         } else {
           if (lastError instanceof Error) throw lastError;
           throw error;
@@ -405,7 +412,7 @@ export class CommandCodeClient implements CommandCodeUpstream {
         else this.router.recordFailure(credential.id, { statusCode });
         finalized = true;
       };
-      const finalizeCallerAbort = () => {
+      const finalizeRelease = () => {
         if (finalized) return;
         this.router.release(credential.id);
         finalized = true;
@@ -419,14 +426,17 @@ export class CommandCodeClient implements CommandCodeUpstream {
             response.statusText,
             await responseBody(response),
           );
-          finalizeFailure(response.status);
           lastError = error;
-          if (
-            attempt < maxAttempts - 1 &&
-            shouldRetry(response.status) &&
-            !effectiveSignal.aborted
-          ) {
-            if (isFatalCredFailure(response.status)) fatalIds.add(credential.id);
+          const fatal = isFatalCredFailure(response.status);
+          const willRetry =
+            attempt < maxAttempts - 1 && shouldRetry(response.status) && !effectiveSignal.aborted;
+          // Only credential-scoped failures may start a cooldown. Provider-scoped
+          // statuses like 429/5xx hit every credential at once, so cooling them
+          // down would bench the whole pool over a single upstream incident.
+          if (fatal) finalizeFailure(response.status);
+          else finalizeRelease();
+          if (willRetry) {
+            if (fatal) fatalIds.add(credential.id);
             else retryableFailed.add(credential.id);
             await retryBackoff(attempt, this.config.commandCodeRetryBackoffMs ?? 250);
             continue;
@@ -439,9 +449,10 @@ export class CommandCodeClient implements CommandCodeUpstream {
             response.statusText,
             "Upstream response body is empty",
           );
-          finalizeFailure(response.status);
           lastError = error;
-          if (attempt < maxAttempts - 1 && !effectiveSignal.aborted) {
+          const willRetry = attempt < maxAttempts - 1 && !effectiveSignal.aborted;
+          finalizeRelease();
+          if (willRetry) {
             retryableFailed.add(credential.id);
             await retryBackoff(attempt, this.config.commandCodeRetryBackoffMs ?? 250);
             continue;
@@ -453,20 +464,21 @@ export class CommandCodeClient implements CommandCodeUpstream {
         for await (const event of parseCommandCodeStream(response.body)) {
           const statusCode = errorStatusCode(event);
           if (event.type === "error") {
-            finalizeFailure(statusCode);
             lastError = new CommandCodeHttpError(
               statusCode ?? 502,
               "CommandCode stream error",
               event,
             );
-            if (
+            const fatal = statusCode !== undefined && isFatalCredFailure(statusCode);
+            const willRetry =
               !emittedVisibleEvent &&
               attempt < maxAttempts - 1 &&
               shouldRetry(statusCode) &&
-              !effectiveSignal.aborted
-            ) {
-              if (statusCode !== undefined && isFatalCredFailure(statusCode))
-                fatalIds.add(credential.id);
+              !effectiveSignal.aborted;
+            if (fatal) finalizeFailure(statusCode);
+            else finalizeRelease();
+            if (willRetry) {
+              if (fatal) fatalIds.add(credential.id);
               else retryableFailed.add(credential.id);
               await retryBackoff(attempt, this.config.commandCodeRetryBackoffMs ?? 250);
               continue attemptLoop;
@@ -481,12 +493,17 @@ export class CommandCodeClient implements CommandCodeUpstream {
         return;
       } catch (error) {
         const statusCode = errorStatusCodeFromUnknown(error);
-        if (signal?.aborted === true) finalizeCallerAbort();
-        else finalizeFailure(statusCode);
         lastError = error;
-        if (attempt < maxAttempts - 1 && shouldRetry(statusCode) && !effectiveSignal.aborted) {
-          if (statusCode !== undefined && isFatalCredFailure(statusCode))
-            fatalIds.add(credential.id);
+        const fatal = statusCode !== undefined && isFatalCredFailure(statusCode);
+        const willRetry =
+          signal?.aborted !== true &&
+          attempt < maxAttempts - 1 &&
+          shouldRetry(statusCode) &&
+          !effectiveSignal.aborted;
+        if (fatal) finalizeFailure(statusCode);
+        else finalizeRelease();
+        if (willRetry) {
+          if (fatal) fatalIds.add(credential.id);
           else retryableFailed.add(credential.id);
           await retryBackoff(attempt, this.config.commandCodeRetryBackoffMs ?? 250);
           continue;

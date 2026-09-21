@@ -8,6 +8,7 @@ import {
   parseCommandCodeStream,
 } from "../src/commandcode.js";
 import type { BridgeConfig, CommandCodeEvent, CommandCodeGenerateBody } from "../src/types.js";
+import type { CommandCodeCredentialRouter } from "../src/credential-router.js";
 
 function streamFromChunks(chunks: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -432,6 +433,144 @@ describe("CommandCode client credential routing", () => {
       Authorization: "Bearer beta-secret",
     });
     expect(events).toContainEqual(expect.objectContaining({ type: "text-delta", text: "ok" }));
+  });
+
+  it("does not cool down a credential when a retried upstream error eventually succeeds", async () => {
+    const postResponses = [
+      new Response('data: {"type":"error","message":"temporary upstream error"}\n', {
+        status: 200,
+      }),
+      new Response(
+        'data: {"type":"text-delta","text":"ok"}\ndata: {"type":"finish","finishReason":"stop"}\n',
+        { status: 200 },
+      ),
+    ];
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const billing = billingResponse(String(input));
+      if (billing) return billing;
+      if (init?.method === "POST") return postResponses.shift()!;
+      throw new Error(`Unexpected fetch ${String(input)}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new CommandCodeClient({
+      ...baseConfig,
+      commandCodeCredentials: [{ id: "alpha", apiKey: "alpha-secret", weight: 1 }],
+    });
+    const events = await collectEvents(client.generate(generateBody));
+
+    const posts = postCalls(fetchMock);
+    expect(posts).toHaveLength(2);
+    expect((posts[1]?.[1] as RequestInit).headers).toMatchObject({
+      Authorization: "Bearer alpha-secret",
+    });
+    expect(events).toContainEqual(expect.objectContaining({ type: "text-delta", text: "ok" }));
+
+    const diagnostics = await client.getCredentialDiagnostics();
+    expect(diagnostics[0]?.disabledUntil).toBeNull();
+  });
+
+  it("serves through a credential cooldown instead of failing the request", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const billing = billingResponse(String(input));
+      if (billing) return billing;
+      if (init?.method === "POST") {
+        return new Response(
+          'data: {"type":"text-delta","text":"ok"}\ndata: {"type":"finish","finishReason":"stop"}\n',
+          { status: 200 },
+        );
+      }
+      throw new Error(`Unexpected fetch ${String(input)}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new CommandCodeClient({
+      ...baseConfig,
+      commandCodeCredentials: [{ id: "alpha", apiKey: "alpha-secret", weight: 1 }],
+    });
+
+    await collectEvents(client.generate(generateBody));
+    const router = (client as unknown as { router: CommandCodeCredentialRouter }).router;
+    router.recordFailure("alpha", { statusCode: 429 });
+    const diagnostics = await client.getCredentialDiagnostics();
+    expect(diagnostics[0]?.disabledUntil).not.toBeNull();
+
+    const events = await collectEvents(client.generate(generateBody));
+    expect(events).toContainEqual(expect.objectContaining({ type: "text-delta", text: "ok" }));
+    const posts = postCalls(fetchMock);
+    expect(posts).toHaveLength(2);
+    expect((posts[1]?.[1] as RequestInit).headers).toMatchObject({
+      Authorization: "Bearer alpha-secret",
+    });
+  });
+
+  it("does not cool down the credential when the provider reports at capacity without a status", async () => {
+    let postCount = 0;
+    const atCapacity =
+      'data: {"type":"error","message":"The request limited providers for this model and they are currently at capacity. Providers considered: deepseek."}\n';
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const billing = billingResponse(String(input));
+      if (billing) return billing;
+      if (init?.method === "POST") {
+        postCount += 1;
+        if (postCount === 1) return new Response(atCapacity, { status: 200 });
+        return new Response(
+          'data: {"type":"text-delta","text":"ok"}\ndata: {"type":"finish","finishReason":"stop"}\n',
+          { status: 200 },
+        );
+      }
+      throw new Error(`Unexpected fetch ${String(input)}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new CommandCodeClient({
+      ...baseConfig,
+      commandCodeCredentials: [{ id: "alpha", apiKey: "alpha-secret", weight: 1 }],
+      commandCodeRetryMaxAttempts: 1,
+    });
+
+    const events = await collectEvents(client.generate(generateBody));
+    expect(events).toContainEqual(expect.objectContaining({ type: "error" }));
+    const diagnostics = await client.getCredentialDiagnostics();
+    expect(diagnostics[0]?.disabledUntil).toBeNull();
+
+    const retryEvents = await collectEvents(client.generate(generateBody));
+    expect(retryEvents).toContainEqual(expect.objectContaining({ type: "text-delta", text: "ok" }));
+    expect(postCalls(fetchMock)).toHaveLength(2);
+  });
+
+  it("does not cool down the credential when a provider-scoped 429 exhausts retries", async () => {
+    let postCount = 0;
+    const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
+      const billing = billingResponse(String(input));
+      if (billing) return billing;
+      if (init?.method === "POST") {
+        postCount += 1;
+        if (postCount === 1) return new Response("at capacity", { status: 429 });
+        return new Response(
+          'data: {"type":"text-delta","text":"ok"}\ndata: {"type":"finish","finishReason":"stop"}\n',
+          { status: 200 },
+        );
+      }
+      throw new Error(`Unexpected fetch ${String(input)}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new CommandCodeClient({
+      ...baseConfig,
+      commandCodeCredentials: [{ id: "alpha", apiKey: "alpha-secret", weight: 1 }],
+      commandCodeRetryMaxAttempts: 1,
+    });
+
+    await expect(collectEvents(client.generate(generateBody))).rejects.toBeInstanceOf(
+      CommandCodeHttpError,
+    );
+    const diagnostics = await client.getCredentialDiagnostics();
+    expect(diagnostics[0]?.disabledUntil).toBeNull();
+
+    const events = await collectEvents(client.generate(generateBody));
+    expect(events).toContainEqual(expect.objectContaining({ type: "text-delta", text: "ok" }));
+    expect(postCalls(fetchMock)).toHaveLength(2);
   });
 
   it("releases the credential without cooldown when the caller aborts mid-stream", async () => {
