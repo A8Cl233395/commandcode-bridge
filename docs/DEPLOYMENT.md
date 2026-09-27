@@ -402,7 +402,7 @@ npm run smoke
 | `COMMANDCODE_DEFAULT_MODEL`        | `deepseek/deepseek-v4-pro`   | Upstream model used by `model: "default"`.                                                                                                                                                        |
 | `COMMANDCODE_ALLOWED_MODELS`       | Pro + Flash                  | Comma-separated allowlist. Requests outside this list are rejected unless unknown models are allowed.                                                                                             |
 | `COMMANDCODE_ALLOW_UNKNOWN_MODELS` | `false`                      | Allows arbitrary model IDs to pass through. Not recommended for production.                                                                                                                       |
-| `COMMANDCODE_CLI_VERSION`          | `1.53.0`                     | Version header sent upstream to match the tested CommandCode CLI behavior.                                                                                                                        |
+| `COMMANDCODE_CLI_VERSION`          | `1.66.0`                     | Version header sent upstream to match the tested CommandCode CLI behavior.                                                                                                                        |
 | `COMMANDCODE_TIMEOUT_MS`           | `600000`                     | Upstream generation timeout (10 minutes). Transient failures are retried within this budget.                                                                                                      |
 | `COMMANDCODE_RETRY_MAX_ATTEMPTS`   | `5`                          | Total request attempts per chat call, including the first. 429/5xx/timeouts retry with backoff; 401/402/403 skip that key.                                                                        |
 | `COMMANDCODE_RETRY_BACKOFF_MS`     | `250`                        | Base exponential backoff between retries (doubles per attempt, capped at 2s).                                                                                                                     |
@@ -442,7 +442,7 @@ Routing behavior:
 
 `GET /v1/models/:model` returns one available model. Known capacity is exposed consistently as `context_window`, `context_length`, and `max_context_length`.
 
-When upgrading a persisted 1.3.1 dashboard catalog, enabled state and custom models are preserved, built-in metadata is refreshed from 1.53.0, and retired built-in IDs are removed instead of being forwarded upstream. Admin writes and restarts require the current `BRIDGE_API_KEY`; only a keyless loopback runtime can bootstrap without one.
+When upgrading a persisted 1.3.1 dashboard catalog, enabled state and custom models are preserved, built-in metadata is refreshed from 1.66.0, and retired built-in IDs are removed instead of being forwarded upstream. Admin writes and restarts require the current `BRIDGE_API_KEY`; only a keyless loopback runtime can bootstrap without one.
 
 ### Empty visible-content policy
 
@@ -456,7 +456,7 @@ For non-streaming Provider responses, `reasoning_content` counts as visible outp
 
 ### Model image input
 
-Both Alpha and Provider request builders remove image inputs for text-only models using the CommandCode CLI 1.53.0 model list in `src/model-images.ts`. Aliases resolve to the same policy. Older image inputs are removed; the latest image-bearing user or tool message receives numbered text markers instead. Image-only historical messages retain an omission marker so the message is not empty. The input conversation is not mutated.
+Both Alpha and Provider request builders remove image inputs for text-only models using the CommandCode CLI 1.66.0 model list in `src/model-images.ts`. Aliases resolve to the same policy. Older image inputs are removed; the latest image-bearing user or tool message receives numbered text markers instead. Image-only historical messages retain an omission marker so the message is not empty. The input conversation is not mutated.
 
 Vision-capable models keep their images. Unknown/custom models follow the CLI's image-capable fallback; absence from the text-only list is not a guarantee of upstream vision support. Update the list alongside future CLI catalog alignments. Alpha converts base64 data URIs to native image parts with `mimeType`; remote URLs remain text placeholders and are not downloaded by the bridge.
 

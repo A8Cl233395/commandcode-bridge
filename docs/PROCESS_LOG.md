@@ -144,6 +144,17 @@
 - Regression-first verification observed 10 expected failures before implementation (version, catalog, context, dashboard, and six retired-id cases). Focused config/dashboard/Alpha/Provider/server tests then passed: 122 tests in five files. Full `npm test` passed once: 222 tests in 15 files. LSP diagnostics on all five changed TypeScript files, `npm run typecheck`, `npm run lint`, and `npm run build` passed.
 - Built-artifact HTTP QA used isolated HOME/config/auth, a local unused port, Alpha mode, and a non-routable upstream. The listening log event signaled readiness without polling. `/health` returned `1.49.0.a`, `/v1/models` returned all 68 canonical models (192 entries with aliases) with matching context fields, and an empty chat request returned structured `400 invalid_request`. Both QA processes were stopped. `node dist/index.js --help` still starts the HTTP server rather than printing help; this existing behavior was observed and its process stopped.
 
+## 2026-09-27
+
+- Updated the locally installed CommandCode CLI from `1.53.0` to `1.66.0` and released bridge version `1.66.0.a`.
+- Audited `npm diff --diff=command-code@1.53.0 --diff=command-code@1.66.0`, the changelog for 1.53.1 through 1.66.0, and the bundled `models.md` reference. Changed files were `package.json`, `CHANGELOG.md`, the bundled knowledge references, the new bundled `loop` skill, `dist/cli.mjs`, and the VS Code extension archive.
+- Added 13 opt-in models from the installed bundle: `z-ai/glm-5.3-flashx`, `xiaomi/mimo-v2.6-pro`, `xiaomi/mimo-v2.6-pro-ultraspeed`, `xiaomi/mimo-v2.6-flash`, `Qwen/Qwen3.8-Omni-Flash`, paid `meituan/LongCat-2.0`, `stepfun/Step-5-Preview`, `stealth/space-bunny-alpha`, `stealth/pixel-canary`, `claude-opus-5-5`, `gpt-6-sol`, `gpt-6-luna`, and `xai/grok-4.7`. Retired `meituan/LongCat-2.0:free` (the CLI now marks it hidden and non-selectable) through `LEGACY_RETIRED_MODEL_IDS`, taking the static catalog from 70 to 82 models. The six established enabled defaults are unchanged.
+- Repriced `deepseek/deepseek-v4-flash-vision-exp` to `$0.15/$0.6` and `stepfun/Step-3.5-Flash` to `$0.09/$0.3`; `stepfun/Step-3.5-Flash` context moved from 1,000,000 to 262,144. Context integers come from the bundle's context map, not the rounded table labels.
+- Re-derived the text-only image set from `isKnownTextOnlyModel`: the only addition is paid `meituan/LongCat-2.0`, so `src/model-images.ts` strips images for it as the CLI does. All other new models declare image input.
+- Wire audit of both bundles found no bridge-facing contract change: the `/alpha/generate` body envelope and `params` keys, the 64,000 default `max_tokens`, `buildCommandAuthHeaders` header names, and `toWireMessages` are identical apart from minifier renames. New additive items stay out of the bridge: a `cache-write-tokens` stream event the CLI folds into usage (the bridge ignores unknown events and never reported cache-write counts), a `conversationId` on the local telemetry span, the Provider API OpenAI Responses endpoint and `/provider/v1/systemone` for `typesafe/jev` (the bridge keeps using `/provider/v1/chat/completions`), and CLI-local `/loop`, herdr, clipboard paste, plan-review, sub-agent card, telemetry, BYOK session-id, and usage-display changes.
+- Aligned current version references in `package.json`, `package-lock.json`, `src/version.ts`, the default `COMMANDCODE_CLI_VERSION`, `.env.example`, `release/env.production.example`, `install.sh`, the deployment guides, the dashboard version assertion, and the English, Korean, and Chinese READMEs (badges, catalog baseline, and model tables).
+- Regression-first verification observed 17 expected catalog, image, and version failures before implementation.
+
 ## 2026-09-16
 
 - Bridge-only release `1.53.0.c` incorporates PR #3 and the image-input policy from issue #5; the CLI baseline remains `1.53.0` and the 70-model catalog is unchanged.
@@ -174,12 +185,12 @@
 - An independent read-only differential audit of both npm bundles found the Alpha caching work of 1.50.0 to be additive rather than breaking: `params.system` may now be a structured block list with `cache_control`, `promptCache` is an optional top-level field, and one-hour cache-write counts arrive as extra provider metadata. The bridge keeps sending a string system prompt with no `promptCache`, its parsers ignore unknown metadata, and existing `cacheReadTokens`/`cacheWriteTokens` mapping stays correct, so no protocol code changed. Adopting cache blocks or org spend-cap surfacing would be separate feature work. `/alpha/generate` transport, `buildCommandAuthHeaders`, `toWireMessages`/`toWireTools`, the 64,000 default output limit, and the NDJSON stream reader are unchanged.
 - Regression-first verification observed 6 expected catalog/version failures before implementation, then 30 passing focused config tests. The full suite passed once with 226 tests in 15 files, alongside `npm run typecheck`, `npm run lint`, Prettier checks on the changed parser-supported files, `npm run build`, `npm pack --dry-run`, and `git diff --check`.
 
-## Current status — 2026-09-16
+## Current status — 2026-09-27
 
 - Branch: `main`, synchronized with `origin/main` when this status audit began.
-- Package: `commandcode-bridge` `1.53.0.c`, Node.js `>=20`, with `commandcode-bridge` and `commandcode-router` executables.
+- Package: `commandcode-bridge` `1.66.0.a`, Node.js `>=20`, with `commandcode-bridge` and `commandcode-router` executables.
 - API surface: authenticated OpenAI-compatible `/v1/models` and `/v1/chat/completions`, health endpoint, and same-origin dashboard configuration.
-- Model surface: 70 statically aligned models with live Provider API refresh when available.
+- Model surface: 82 statically aligned models (CommandCode CLI 1.66.0) with live Provider API refresh when available.
 - Routing surface: `daily_burn_priority`, `balance_priority`, `round_robin`, and `drain_first`, with per-key model scope, concurrency, cooldown, failover, and retry controls.
 - Deployment surface: Docker/Compose, Linux install/uninstall scripts, nginx and systemd release assets, and GitHub/GitLab CI definitions.
 - Verification baseline: merged PR #3 passed 265 tests in 17 files, local HTTP QA, and GitHub CI on Node 20, 22, and 24. Release and deployment checks are performed separately for each version.

@@ -9,18 +9,18 @@ describe("configuration and model aliases", () => {
     expect(config.defaultModel).toBe("deepseek/deepseek-v4-pro");
   });
 
-  it("advertises CommandCode CLI 1.53.0 by default while allowing override", () => {
-    expect(loadBridgeConfig({ env: {} }).cliVersion).toBe("1.53.0");
+  it("advertises CommandCode CLI 1.66.0 by default while allowing override", () => {
+    expect(loadBridgeConfig({ env: {} }).cliVersion).toBe("1.66.0");
     expect(loadBridgeConfig({ env: { COMMANDCODE_CLI_VERSION: "1.14.0-test" } }).cliVersion).toBe(
       "1.14.0-test",
     );
   });
 
-  it("matches the exact CommandCode 1.53.0 canonical catalog and advertised prices", () => {
+  it("matches the exact CommandCode 1.66.0 canonical catalog and advertised prices", () => {
     const expectedPrices = new Map<string, [number, number]>([
       ["deepseek/deepseek-v4-pro", [0.66, 1.98]],
       ["deepseek/deepseek-v4-flash", [0.15, 0.6]],
-      ["deepseek/deepseek-v4-flash-vision-exp", [0.22, 0.66]],
+      ["deepseek/deepseek-v4-flash-vision-exp", [0.15, 0.6]],
       ["deepseek/deepseek-v4-flash-fast", [0.28, 0.56]],
       ["deepseek/deepseek-v4.1-flash", [0.15, 0.6]],
       ["moonshotai/Kimi-K3", [3, 15]],
@@ -29,6 +29,7 @@ describe("configuration and model aliases", () => {
       ["moonshotai/Kimi-K2.6", [0.95, 4]],
       ["moonshotai/Kimi-K2.5", [0.6, 3]],
       ["z-ai/glm-5.3-flash", [0.15, 0.5]],
+      ["z-ai/glm-5.3-flashx", [0.37, 1.25]],
       ["zai-org/GLM-5.3", [1.4, 4.4]],
       ["zai-org/GLM-5.2", [1.4, 4.4]],
       ["zai-org/GLM-5.2-Fast", [3, 10.25]],
@@ -37,8 +38,12 @@ describe("configuration and model aliases", () => {
       ["MiniMaxAI/MiniMax-M3", [0.3, 1.2]],
       ["MiniMaxAI/MiniMax-M2.7", [0.3, 1.2]],
       ["MiniMaxAI/MiniMax-M2.5", [0.3, 1.2]],
+      ["xiaomi/mimo-v2.6-pro", [0.435, 0.87]],
+      ["xiaomi/mimo-v2.6-pro-ultraspeed", [4.35, 8.7]],
+      ["xiaomi/mimo-v2.6-flash", [0.14, 0.28]],
       ["xiaomi/mimo-v2.5-pro", [0.435, 0.87]],
       ["xiaomi/mimo-v2.5", [0.14, 0.28]],
+      ["Qwen/Qwen3.8-Omni-Flash", [0.15, 0.47]],
       ["Qwen/Qwen3.8-Max-0902", [2, 6]],
       ["Qwen/Qwen3.8-Max", [2, 6]],
       ["Qwen/Qwen3.8-27B", [0.4, 3]],
@@ -48,9 +53,10 @@ describe("configuration and model aliases", () => {
       ["Qwen/Qwen3.7-Flash", [0.03, 0.13]],
       ["Qwen/Qwen3.6-Max-Preview", [1.3, 7.8]],
       ["Qwen/Qwen3.6-Plus", [0.5, 3]],
-      ["meituan/LongCat-2.0:free", [0, 0]],
+      ["meituan/LongCat-2.0", [0.3, 1.2]],
+      ["stepfun/Step-5-Preview", [1, 2.7]],
       ["stepfun/Step-3.7-Flash", [0.2, 1.15]],
-      ["stepfun/Step-3.5-Flash", [0.1, 0.3]],
+      ["stepfun/Step-3.5-Flash", [0.09, 0.3]],
       ["tencent/hy3-paid", [0.14, 0.58]],
       ["tencent/hy4-preview", [0.834, 2.501]],
       ["nvidia/nemotron-3-ultra-550b-a55b", [0.6, 2.4]],
@@ -58,15 +64,20 @@ describe("configuration and model aliases", () => {
       ["thinkingmachines/inkling-small", [0.5, 1.2]],
       ["poolside/laguna-s-2.1-free", [0, 0]],
       ["inclusionai/ling-3.0-flash-sante:free", [0, 0]],
+      ["stealth/space-bunny-alpha", [0, 0]],
+      ["stealth/pixel-canary", [0, 0]],
       ["claude-sonnet-5", [2, 10]],
       ["claude-sonnet-4-6", [3, 15]],
       ["claude-fable-5-1", [10, 50]],
       ["claude-fable-5", [10, 50]],
+      ["claude-opus-5-5", [4, 20]],
       ["claude-opus-5", [5, 25]],
       ["claude-opus-4-8", [5, 25]],
       ["claude-opus-4-7", [5, 25]],
       ["claude-haiku-4-5-20251001", [1, 5]],
       ["gpt-6-astra", [10, 50]],
+      ["gpt-6-sol", [2, 10]],
+      ["gpt-6-luna", [0.1, 0.5]],
       ["gpt-5.6-sol", [5, 30]],
       ["gpt-5.6-terra", [2, 12]],
       ["gpt-5.6-luna", [0.2, 1.2]],
@@ -88,10 +99,11 @@ describe("configuration and model aliases", () => {
       ["meta/muse-spark-1.3-contributor", [0.1, 0.2]],
       ["xai/grok-4.5", [2, 6]],
       ["xai/grok-4.6", [2, 6]],
+      ["xai/grok-4.7", [1.2, 3.6]],
     ]);
     const catalog = loadBridgeConfig({ env: {} }).modelCatalog ?? [];
 
-    expect(catalog).toHaveLength(70);
+    expect(catalog).toHaveLength(82);
     expect(catalog.map((model) => model.id)).toEqual([...expectedPrices.keys()]);
     for (const model of catalog) {
       const match = model.notes?.match(/^\$(\d+(?:\.\d+)?)\/M in · \$(\d+(?:\.\d+)?)\/M out/);
@@ -100,7 +112,7 @@ describe("configuration and model aliases", () => {
     }
   });
 
-  it("matches the exact CommandCode 1.53.0 published context windows", () => {
+  it("matches the exact CommandCode 1.66.0 published context windows", () => {
     const expectedContextWindows = new Map<string, number | undefined>([
       ["deepseek/deepseek-v4-pro", 1_000_000],
       ["deepseek/deepseek-v4-flash", 1_000_000],
@@ -113,6 +125,7 @@ describe("configuration and model aliases", () => {
       ["moonshotai/Kimi-K2.6", 256_000],
       ["moonshotai/Kimi-K2.5", 256_000],
       ["z-ai/glm-5.3-flash", 1_048_576],
+      ["z-ai/glm-5.3-flashx", 1_000_000],
       ["zai-org/GLM-5.3", 1_000_000],
       ["zai-org/GLM-5.2", 1_000_000],
       ["zai-org/GLM-5.2-Fast", 1_000_000],
@@ -121,8 +134,12 @@ describe("configuration and model aliases", () => {
       ["MiniMaxAI/MiniMax-M3", 1_000_000],
       ["MiniMaxAI/MiniMax-M2.7", 200_000],
       ["MiniMaxAI/MiniMax-M2.5", 200_000],
+      ["xiaomi/mimo-v2.6-pro", 1_048_576],
+      ["xiaomi/mimo-v2.6-pro-ultraspeed", 1_048_576],
+      ["xiaomi/mimo-v2.6-flash", 1_048_576],
       ["xiaomi/mimo-v2.5-pro", 1_000_000],
       ["xiaomi/mimo-v2.5", 1_000_000],
+      ["Qwen/Qwen3.8-Omni-Flash", 1_000_000],
       ["Qwen/Qwen3.8-Max-0902", 1_000_000],
       ["Qwen/Qwen3.8-Max", 1_000_000],
       ["Qwen/Qwen3.8-27B", 262_144],
@@ -132,9 +149,10 @@ describe("configuration and model aliases", () => {
       ["Qwen/Qwen3.7-Flash", 1_000_000],
       ["Qwen/Qwen3.6-Max-Preview", 200_000],
       ["Qwen/Qwen3.6-Plus", 200_000],
-      ["meituan/LongCat-2.0:free", 1_048_576],
+      ["meituan/LongCat-2.0", 1_048_576],
+      ["stepfun/Step-5-Preview", 1_000_000],
       ["stepfun/Step-3.7-Flash", 256_000],
-      ["stepfun/Step-3.5-Flash", 1_000_000],
+      ["stepfun/Step-3.5-Flash", 262_144],
       ["tencent/hy3-paid", 262_144],
       ["tencent/hy4-preview", 1_048_576],
       ["nvidia/nemotron-3-ultra-550b-a55b", 1_000_000],
@@ -142,15 +160,20 @@ describe("configuration and model aliases", () => {
       ["thinkingmachines/inkling-small", 1_000_000],
       ["poolside/laguna-s-2.1-free", 256_000],
       ["inclusionai/ling-3.0-flash-sante:free", 262_144],
+      ["stealth/space-bunny-alpha", 1_000_000],
+      ["stealth/pixel-canary", 262_144],
       ["claude-sonnet-5", 1_000_000],
       ["claude-sonnet-4-6", 1_000_000],
       ["claude-fable-5-1", 1_000_000],
       ["claude-fable-5", 1_000_000],
+      ["claude-opus-5-5", 1_000_000],
       ["claude-opus-5", 1_000_000],
       ["claude-opus-4-8", 1_000_000],
       ["claude-opus-4-7", 1_000_000],
       ["claude-haiku-4-5-20251001", 200_000],
       ["gpt-6-astra", 1_050_000],
+      ["gpt-6-sol", 1_050_000],
+      ["gpt-6-luna", 1_050_000],
       ["gpt-5.6-sol", 1_050_000],
       ["gpt-5.6-terra", 1_050_000],
       ["gpt-5.6-luna", 1_050_000],
@@ -172,6 +195,7 @@ describe("configuration and model aliases", () => {
       ["meta/muse-spark-1.3-contributor", 1_048_576],
       ["xai/grok-4.5", 500_000],
       ["xai/grok-4.6", 500_000],
+      ["xai/grok-4.7", 500_000],
     ]);
     const definitions = COMMANDCODE_MODEL_DEFINITIONS as Array<{
       id: string;
@@ -236,6 +260,52 @@ describe("configuration and model aliases", () => {
           allowUnknownModels: true,
         }),
       ).toThrow(/not allowed/i);
+    });
+  });
+
+  describe.each([
+    { id: "z-ai/glm-5.3-flashx", contextWindow: 1_000_000 },
+    { id: "xiaomi/mimo-v2.6-pro", contextWindow: 1_048_576 },
+    { id: "xiaomi/mimo-v2.6-pro-ultraspeed", contextWindow: 1_048_576 },
+    { id: "xiaomi/mimo-v2.6-flash", contextWindow: 1_048_576 },
+    { id: "Qwen/Qwen3.8-Omni-Flash", contextWindow: 1_000_000 },
+    { id: "meituan/LongCat-2.0", contextWindow: 1_048_576 },
+    { id: "stepfun/Step-5-Preview", contextWindow: 1_000_000 },
+    { id: "stealth/space-bunny-alpha", contextWindow: 1_000_000 },
+    { id: "stealth/pixel-canary", contextWindow: 262_144 },
+    { id: "claude-opus-5-5", contextWindow: 1_000_000 },
+    { id: "gpt-6-sol", contextWindow: 1_050_000 },
+    { id: "gpt-6-luna", contextWindow: 1_050_000 },
+    { id: "xai/grok-4.7", contextWindow: 500_000 },
+  ])("CLI 1.66.0 model $id", ({ id, contextWindow }) => {
+    it("merges disabled when upgrading a persisted catalog", () => {
+      // Given an established model and the retired free LongCat in persisted state.
+      const configured = [
+        { id: "deepseek/deepseek-v4-flash", enabled: true },
+        { id: "meituan/LongCat-2.0:free", enabled: true },
+      ];
+
+      // When the catalog gains the new built-ins.
+      const merged = mergeModelCatalog(configured, [], normalizeModelName, false);
+
+      // Then new models require opt-in and the retired free LongCat stays absent.
+      expect(merged.find((model) => model.id === id)).toMatchObject({
+        enabled: false,
+        contextWindow,
+      });
+      expect(merged.some((model) => model.id === "meituan/LongCat-2.0:free")).toBe(false);
+      expect(merged.find((model) => model.id === "deepseek/deepseek-v4-flash")?.enabled).toBe(true);
+    });
+
+    it("resolves its canonical id only after opt-in", () => {
+      const defaults = loadBridgeConfig({ env: {}, authPaths: [] });
+      expect(() => resolveModel(id, defaults)).toThrow(/not allowed/i);
+
+      const config = loadBridgeConfig({
+        env: { COMMANDCODE_ALLOWED_MODELS: id },
+        authPaths: [],
+      });
+      expect(resolveModel(id, config).upstreamModel).toBe(id);
     });
   });
 
@@ -412,6 +482,7 @@ describe("configuration and model aliases", () => {
       "anthropic/claude-sonnet-4-5-20250929",
       "anthropic/claude-sonnet-4-20250514",
       "inclusionai/ling-3.0-flash-free",
+      "meituan/LongCat-2.0:free",
     ];
     const merged = mergeModelCatalog(
       retiredIds.map((id) => ({ id, enabled: true })),

@@ -1,7 +1,7 @@
 import { modelAliasMap } from "./model-catalog.js";
 import type { OpenAIChatMessage, OpenAIContentPart } from "./types.js";
 
-// command-code 1.53.0: isKnownTextOnlyModel and the registry's inputModalities.
+// command-code 1.66.0: isKnownTextOnlyModel and the registry's inputModalities.
 // Unknown models remain image-capable, matching the CLI registry fallback.
 const textOnlyModels: ReadonlySet<string> = new Set([
   "deepseek/deepseek-v4-pro",
@@ -18,6 +18,7 @@ const textOnlyModels: ReadonlySet<string> = new Set([
   "xiaomi/mimo-v2.5-pro",
   "Qwen/Qwen3.6-Max-Preview",
   "Qwen/Qwen3.7-Max",
+  "meituan/LongCat-2.0",
   "meituan/LongCat-2.0:free",
   "stepfun/Step-3.5-Flash",
   "tencent/hy4-preview",

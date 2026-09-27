@@ -401,7 +401,7 @@ npm run smoke
 | `COMMANDCODE_DEFAULT_MODEL`        | `deepseek/deepseek-v4-pro`   | `model: "default"` 요청이 실제로 사용할 upstream model입니다.                                                                                                                      |
 | `COMMANDCODE_ALLOWED_MODELS`       | Pro + Flash                  | 허용할 model ID 목록입니다. 이 목록 밖 요청은 unknown model 허용 옵션을 켜지 않는 한 거부됩니다.                                                                                   |
 | `COMMANDCODE_ALLOW_UNKNOWN_MODELS` | `false`                      | 임의 model ID를 upstream으로 통과시킵니다. 운영에서는 권장하지 않습니다.                                                                                                           |
-| `COMMANDCODE_CLI_VERSION`          | `1.53.0`                     | 테스트된 CommandCode CLI 동작과 맞추기 위해 upstream에 보내는 version header입니다.                                                                                                |
+| `COMMANDCODE_CLI_VERSION`          | `1.66.0`                     | 테스트된 CommandCode CLI 동작과 맞추기 위해 upstream에 보내는 version header입니다.                                                                                                |
 | `COMMANDCODE_TIMEOUT_MS`           | `600000`                     | upstream generation timeout(10분)입니다. 일시적 실패는 이 budget 안에서 재시도됩니다.                                                                                              |
 | `COMMANDCODE_RETRY_MAX_ATTEMPTS`   | `5`                          | chat 호출당 총 요청 시도 횟수(첫 요청 포함)입니다. 429/5xx/timeout은 백오프로 재시도하고, 401/402/403은 해당 키를 건너뜁니다.                                                      |
 | `COMMANDCODE_RETRY_BACKOFF_MS`     | `250`                        | 재시도 사이 지수 백오프 기본값입니다(시도마다 2배, 최대 2초).                                                                                                                      |
@@ -441,7 +441,7 @@ Credential JSON 파일 예시:
 
 `GET /v1/models/:model`은 available model 하나를 반환합니다. 알려진 capacity는 `context_window`, `context_length`, `max_context_length`에 동일하게 노출됩니다.
 
-저장된 1.3.1 dashboard catalog 업그레이드 시 enabled state와 custom model은 보존하고 built-in metadata는 1.53.0 기준으로 갱신하며 retired built-in ID는 upstream으로 전달하지 않습니다. Admin write와 restart는 현재 `BRIDGE_API_KEY`가 필요하고, key 없는 loopback runtime만 인증 없이 bootstrap할 수 있습니다.
+저장된 1.3.1 dashboard catalog 업그레이드 시 enabled state와 custom model은 보존하고 built-in metadata는 1.66.0 기준으로 갱신하며 retired built-in ID는 upstream으로 전달하지 않습니다. Admin write와 restart는 현재 `BRIDGE_API_KEY`가 필요하고, key 없는 loopback runtime만 인증 없이 bootstrap할 수 있습니다.
 
 ### 빈 visible content 방어 정책
 
@@ -455,7 +455,7 @@ Provider 비스트리밍 응답에서는 `INCLUDE_REASONING=true`일 때만 `rea
 
 ### 모델의 이미지 입력
 
-Alpha와 Provider 요청 변환 모두 `src/model-images.ts`에 기록된 CommandCode CLI 1.53.0 모델 목록을 기준으로 텍스트 전용 모델의 이미지 입력을 제거합니다. 별칭에도 같은 정책을 적용합니다. 이전 이미지 입력은 제거하고, 가장 최근 이미지가 포함된 user 또는 tool 메시지에는 번호가 붙은 텍스트 마커를 넣습니다. 이미지만 있던 과거 메시지에는 생략 마커를 남겨 빈 메시지가 되지 않도록 합니다. 입력 대화 객체는 변경하지 않습니다.
+Alpha와 Provider 요청 변환 모두 `src/model-images.ts`에 기록된 CommandCode CLI 1.66.0 모델 목록을 기준으로 텍스트 전용 모델의 이미지 입력을 제거합니다. 별칭에도 같은 정책을 적용합니다. 이전 이미지 입력은 제거하고, 가장 최근 이미지가 포함된 user 또는 tool 메시지에는 번호가 붙은 텍스트 마커를 넣습니다. 이미지만 있던 과거 메시지에는 생략 마커를 남겨 빈 메시지가 되지 않도록 합니다. 입력 대화 객체는 변경하지 않습니다.
 
 비전 모델의 이미지는 유지합니다. 알 수 없는 모델이나 custom 모델은 CLI와 같이 이미지 입력을 허용하는 기본 동작을 따르므로, 텍스트 전용 목록에 없다고 실제 상류의 비전 지원이 보장되지는 않습니다. 향후 CLI 카탈로그 정렬 시 이 목록도 함께 갱신해야 합니다. Alpha에서는 base64 data URI를 `mimeType`이 있는 네이티브 이미지 파트로 변환하며, 원격 URL은 텍스트 자리표시자로 유지하고 bridge가 내려받지 않습니다.
 

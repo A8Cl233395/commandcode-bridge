@@ -10,28 +10,31 @@ const image: OpenAIContentPart = {
 };
 
 describe("model image input limits", () => {
-  it.each(["deepseek/deepseek-v4-pro", "deepseek-v4-pro", "alibaba/qwen3.7-max"])(
-    "omits image data for the CLI text-only model %s",
-    (model) => {
-      const request: OpenAIChatCompletionRequest = {
-        model,
-        messages: [{ role: "user", content: [image] }],
-      };
+  it.each([
+    "deepseek/deepseek-v4-pro",
+    "deepseek-v4-pro",
+    "alibaba/qwen3.7-max",
+    "meituan/LongCat-2.0",
+  ])("omits image data for the CLI text-only model %s", (model) => {
+    const request: OpenAIChatCompletionRequest = {
+      model,
+      messages: [{ role: "user", content: [image] }],
+    };
 
-      const alpha = buildCommandCodeGenerateBody({ request, upstreamModel: model });
-      const provider = buildProviderChatRequestBody(request, model);
+    const alpha = buildCommandCodeGenerateBody({ request, upstreamModel: model });
+    const provider = buildProviderChatRequestBody(request, model);
 
-      expect(JSON.stringify(alpha.params.messages)).not.toContain("base64");
-      expect(JSON.stringify(provider.messages)).not.toContain("base64");
-      expect(alpha.params.messages[0]?.content[0]?.type).toBe("text");
-      expect(JSON.stringify(alpha.params.messages)).toContain('index=\\"1\\"');
-      expect(request.messages[0]?.content).toEqual([image]);
-    },
-  );
+    expect(JSON.stringify(alpha.params.messages)).not.toContain("base64");
+    expect(JSON.stringify(provider.messages)).not.toContain("base64");
+    expect(alpha.params.messages[0]?.content[0]?.type).toBe("text");
+    expect(JSON.stringify(alpha.params.messages)).toContain('index=\\"1\\"');
+    expect(request.messages[0]?.content).toEqual([image]);
+  });
 
   it.each([
     "deepseek/deepseek-v4.1-flash",
     "deepseek/deepseek-v4-flash-vision-exp",
+    "xiaomi/mimo-v2.6-flash",
     "custom/model",
   ])("preserves images for CLI vision-capable or unknown model %s", (model) => {
     const request: OpenAIChatCompletionRequest = {
