@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { randomUUID, timingSafeEqual } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 
 import cors from "@fastify/cors";
@@ -542,6 +543,25 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
           dashboardConfigResponse(config, configDirty, diagnostics, providerAccessById),
         ),
       );
+  });
+
+  const testPageRoot = new URL("../test-page/", import.meta.url);
+  const testPageFiles = new Map<string, readonly [string, string]>([
+    ["", ["index.html", "text/html; charset=utf-8"]],
+    ["app.css", ["app.css", "text/css; charset=utf-8"]],
+    ["app.js", ["app.js", "text/javascript; charset=utf-8"]],
+  ]);
+  app.get("/test-page", async (_request, reply) => reply.redirect("/test-page/"));
+  app.get("/test-page/*", async (request, reply) => {
+    const entry = testPageFiles.get((request.params as { "*"?: string })["*"] ?? "");
+    if (!entry) return reply.code(404).send(compatibilityProbeNotFoundBody());
+    const [file, type] = entry;
+    try {
+      const body = await readFile(new URL(file, testPageRoot));
+      return reply.type(type).header("cache-control", "no-store").send(body);
+    } catch {
+      return reply.code(404).send(compatibilityProbeNotFoundBody());
+    }
   });
 
   let configDirty = false;

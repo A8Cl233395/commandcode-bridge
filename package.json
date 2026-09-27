@@ -12,6 +12,7 @@
   "files": [
     "dist/",
     "docs/",
+    "test-page/",
     "release/",
     "README.md",
     "README.ko.md",

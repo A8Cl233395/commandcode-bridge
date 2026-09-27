@@ -8,6 +8,27 @@ export default tseslint.config(
     ignores: ["dist/**", "node_modules/**", "release/**", ".internal/**"],
   },
   {
+    files: ["test-page/**/*.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: {
+        window: "readonly",
+        document: "readonly",
+        location: "readonly",
+        history: "readonly",
+        localStorage: "readonly",
+        navigator: "readonly",
+        fetch: "readonly",
+        getComputedStyle: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        crypto: "readonly",
+        Intl: "readonly",
+        URLSearchParams: "readonly",
+      },
+    },
+  },
+  {
     files: ["**/*.ts"],
     languageOptions: {
       parserOptions: {

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0e0c0a" />
+    <title>CommandCode Bridge</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-row">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div class="brand-text">
+            <p class="brand-name">CommandCode <em>Bridge</em></p>
+            <p class="kicker">
+              <a href="https://yelixir.dev" target="_blank" rel="noopener noreferrer"
+                >yElixir.dev</a
+              >
+              <span aria-hidden="true">·</span>
+              <a href="/dashboard" data-i18n="previewLink">Preview · current dashboard</a>
+            </p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <span class="status-chip" id="statusChip" data-state="checking">
+            <i class="status-dot" aria-hidden="true"></i>
+            <span id="statusText" data-i18n="checking">Checking</span>
+            <span class="status-version" id="versionText"></span>
+          </span>
+          <button class="btn btn-outline btn-sm" id="liveToggle" type="button" aria-pressed="true">
+            <span class="icon" data-icon="radio"></span>
+            <span id="liveLabel" data-i18n="live">Live</span>
+          </button>
+          <button class="btn btn-outline btn-sm" id="refreshBalances" type="button">
+            <span class="icon" data-icon="refresh"></span>
+            <span class="label-long" data-i18n="refresh">Refresh balances</span>
+            <span class="label-short" data-i18n="refreshShort">Refresh</span>
+          </button>
+          <label class="sr-only" for="langSelect" data-i18n="language">Language</label>
+          <select class="select select-sm" id="langSelect">
+            <option value="ko">한국어</option>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </select>
+          <button
+            class="btn btn-ghost btn-icon"
+            id="themeToggle"
+            type="button"
+            data-i18n-aria="toggleTheme"
+            aria-label="Toggle theme"
+          >
+            <span class="icon" data-icon="moon"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div id="banners"></div>
+
+    <main id="main" class="wrap main">
+      <div class="tabs" role="tablist" data-i18n-aria="sections" aria-label="Sections">
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-overview"
+          data-tab="overview"
+          aria-controls="panel-overview"
+        >
+          <span class="icon" data-icon="grid"></span
+          ><span class="tab-label" data-i18n="tabOverview">Overview</span>
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-credentials"
+          data-tab="credentials"
+          aria-controls="panel-credentials"
+        >
+          <span class="icon" data-icon="key"></span
+          ><span class="tab-label" data-i18n="tabCredentials">Credentials</span>
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-models"
+          data-tab="models"
+          aria-controls="panel-models"
+        >
+          <span class="icon" data-icon="layers"></span
+          ><span class="tab-label" data-i18n="tabModels">Models</span>
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-settings"
+          data-tab="settings"
+          aria-controls="panel-settings"
+        >
+          <span class="icon" data-icon="sliders"></span
+          ><span class="tab-label" data-i18n="tabSettings">Settings</span>
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="tab-info"
+          data-tab="info"
+          aria-controls="panel-info"
+        >
+          <span class="icon" data-icon="info"></span
+          ><span class="tab-label" data-i18n="tabInfo">Info</span>
+        </button>
+      </div>
+
+      <section
+        class="tab-panel"
+        role="tabpanel"
+        id="panel-overview"
+        aria-labelledby="tab-overview"
+      ></section>
+      <section
+        class="tab-panel"
+        role="tabpanel"
+        id="panel-credentials"
+        aria-labelledby="tab-credentials"
+        hidden
+      ></section>
+      <section
+        class="tab-panel"
+        role="tabpanel"
+        id="panel-models"
+        aria-labelledby="tab-models"
+        hidden
+      ></section>
+      <section
+        class="tab-panel"
+        role="tabpanel"
+        id="panel-settings"
+        aria-labelledby="tab-settings"
+        hidden
+      ></section>
+      <section
+        class="tab-panel"
+        role="tabpanel"
+        id="panel-info"
+        aria-labelledby="tab-info"
+        hidden
+      ></section>
+    </main>
+
+    <div class="action-bar" id="actionBar" hidden>
+      <span class="action-text" id="actionText"></span>
+      <button class="btn btn-accent btn-sm" id="saveButton" type="button" data-i18n="save">
+        Save
+      </button>
+      <button class="btn btn-outline btn-sm" id="restartButton" type="button" data-i18n="restart">
+        Restart bridge
+      </button>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

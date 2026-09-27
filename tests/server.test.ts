@@ -162,6 +162,30 @@ describe("Fastify OpenAI-compatible server", () => {
     await app.close();
   });
 
+  it("serves only the whitelisted test-page preview files", async () => {
+    const app = await createTestApp({
+      upstream: new FakeCommandCodeClient(),
+      configOverrides: { bridgeApiKey: "bridge-secret" },
+    });
+    const redirect = await app.inject({ method: "GET", url: "/test-page" });
+    const page = await app.inject({ method: "GET", url: "/test-page/" });
+    const script = await app.inject({ method: "GET", url: "/test-page/app.js" });
+    const style = await app.inject({ method: "GET", url: "/test-page/app.css" });
+    const traversal = await app.inject({ method: "GET", url: "/test-page/../package.json" });
+    const unknown = await app.inject({ method: "GET", url: "/test-page/secret.json" });
+
+    expect(redirect.statusCode).toBe(302);
+    expect(redirect.headers.location).toBe("/test-page/");
+    expect(page.statusCode).toBe(200);
+    expect(page.headers["content-type"]).toContain("text/html");
+    expect(page.body).toContain('src="./app.js"');
+    expect(script.headers["content-type"]).toContain("text/javascript");
+    expect(style.headers["content-type"]).toContain("text/css");
+    expect(traversal.statusCode).toBe(404);
+    expect(unknown.statusCode).toBe(404);
+    await app.close();
+  });
+
   it("serves dashboard CSP without upgrading HTTP admin calls to HTTPS", async () => {
     const app = await createTestApp({ upstream: new FakeCommandCodeClient() });
     const response = await app.inject({ method: "GET", url: "/dashboard" });
