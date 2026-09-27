@@ -46,7 +46,6 @@ import {
   isCompatibilityProbePath,
   isQuietRequestLogObject,
 } from "./compatibility-probes.js";
-import { dashboardHtml } from "./dashboard.js";
 import {
   collectOpenAICompletionWithEmptyVisibleRetry,
   requestedMaxTokens,
@@ -524,7 +523,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
     },
   }));
 
-  app.get("/", async (_request, reply) => reply.redirect("/dashboard"));
+  app.get("/", async (_request, reply) => reply.redirect("/dashboard/"));
 
   async function readCredentialDiagnostics(
     refresh: boolean,
@@ -533,31 +532,22 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
     return diagnosticsProvider.getCredentialDiagnostics({ refresh });
   }
 
-  app.get("/dashboard", async (_request, reply) => {
-    const diagnostics = await readCredentialDiagnostics(false).catch(() => []);
-    return reply
-      .type("text/html; charset=utf-8")
-      .header("cache-control", "no-store")
-      .send(
-        dashboardHtml(
-          dashboardConfigResponse(config, configDirty, diagnostics, providerAccessById),
-        ),
-      );
-  });
-
-  const testPageRoot = new URL("../test-page/", import.meta.url);
-  const testPageFiles = new Map<string, readonly [string, string]>([
+  const dashboardRoot = new URL("../dashboard/", import.meta.url);
+  const dashboardFiles = new Map<string, readonly [string, string]>([
     ["", ["index.html", "text/html; charset=utf-8"]],
     ["app.css", ["app.css", "text/css; charset=utf-8"]],
     ["app.js", ["app.js", "text/javascript; charset=utf-8"]],
   ]);
-  app.get("/test-page", async (_request, reply) => reply.redirect("/test-page/"));
-  app.get("/test-page/*", async (request, reply) => {
-    const entry = testPageFiles.get((request.params as { "*"?: string })["*"] ?? "");
+  app.get("/dashboard", async (request, reply) => {
+    const query = request.url.indexOf("?");
+    return reply.redirect(`/dashboard/${query >= 0 ? request.url.slice(query) : ""}`);
+  });
+  app.get("/dashboard/*", async (request, reply) => {
+    const entry = dashboardFiles.get((request.params as { "*"?: string })["*"] ?? "");
     if (!entry) return reply.code(404).send(compatibilityProbeNotFoundBody());
     const [file, type] = entry;
     try {
-      const body = await readFile(new URL(file, testPageRoot));
+      const body = await readFile(new URL(file, dashboardRoot));
       return reply.type(type).header("cache-control", "no-store").send(body);
     } catch {
       return reply.code(404).send(compatibilityProbeNotFoundBody());

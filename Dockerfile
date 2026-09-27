@@ -20,6 +20,7 @@ ENV NODE_ENV=production \
 COPY --from=build /app/package.json /app/package-lock.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY dashboard ./dashboard
 COPY README.md README.ko.md LICENSE .env.example ./
 USER node
 EXPOSE 9992

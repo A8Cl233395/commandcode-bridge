@@ -8,7 +8,7 @@ export default tseslint.config(
     ignores: ["dist/**", "node_modules/**", "release/**", ".internal/**"],
   },
   {
-    files: ["test-page/**/*.js"],
+    files: ["dashboard/**/*.js"],
     languageOptions: {
       sourceType: "script",
       globals: {

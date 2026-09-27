@@ -144,6 +144,14 @@
 - Regression-first verification observed 10 expected failures before implementation (version, catalog, context, dashboard, and six retired-id cases). Focused config/dashboard/Alpha/Provider/server tests then passed: 122 tests in five files. Full `npm test` passed once: 222 tests in 15 files. LSP diagnostics on all five changed TypeScript files, `npm run typecheck`, `npm run lint`, and `npm run build` passed.
 - Built-artifact HTTP QA used isolated HOME/config/auth, a local unused port, Alpha mode, and a non-routable upstream. The listening log event signaled readiness without polling. `/health` returned `1.49.0.a`, `/v1/models` returned all 68 canonical models (192 entries with aliases) with matching context fields, and an empty chat request returned structured `400 invalid_request`. Both QA processes were stopped. `node dist/index.js --help` still starts the HTTP server rather than printing help; this existing behavior was observed and its process stopped.
 
+## 2026-09-27 (1.66.0.b)
+
+- Released bridge-only version `1.66.0.b` on CommandCode CLI `1.66.0`: the dashboard was rebuilt with the kiro-lb operations-console layout in the yelixir.dev palette and typography.
+- The new dashboard is three static files in `dashboard/` (`index.html`, `app.css`, `app.js`) with no build step or dependency. `GET /dashboard/` serves them from a fixed whitelist (unknown names and path traversal return 404); `/` and `/dashboard` redirect to `/dashboard/` and keep the query string. The package `files` list and the Docker runtime image now include `dashboard/`.
+- Tabs: Overview (five KPI cards, a browser-sampled dithered live-load chart, a balance-by-key donut, credential health with 5-hour and weekly limit meters), Credentials, Models (grouped by provider with search), Settings (bind, client API key, routing policy, per-key concurrency), and Info. It keeps the Korean, English, and Chinese locales, adds a light theme, and adds `?demo` sample data that never calls a write endpoint. It uses only the existing `/health` and `/admin/*` endpoints, so no API contract changed.
+- The previous inline dashboard (`src/dashboard.ts`) and its 29 string-level tests (`tests/dashboard-ui.test.ts`) were removed. The last revision serving it is commit `dfc0761`, tagged `legacy-dashboard-1.66.0.a`, which also introduced the preview at `/test-page/`; that preview route is gone now that the page is the dashboard.
+- Verification: server tests cover the whitelist, redirects, query preservation, and CSP. Headless Chromium against the built bridge confirmed live and demo rendering, tab and keyboard navigation, model search, the save bar, theme and language switching, no console errors, and no page-level horizontal overflow at 375 px.
+
 ## 2026-09-27
 
 - Updated the locally installed CommandCode CLI from `1.53.0` to `1.66.0` and released bridge version `1.66.0.a`.
@@ -188,8 +196,8 @@
 ## Current status — 2026-09-27
 
 - Branch: `main`, synchronized with `origin/main` when this status audit began.
-- Package: `commandcode-bridge` `1.66.0.a`, Node.js `>=20`, with `commandcode-bridge` and `commandcode-router` executables.
-- API surface: authenticated OpenAI-compatible `/v1/models` and `/v1/chat/completions`, health endpoint, and same-origin dashboard configuration.
+- Package: `commandcode-bridge` `1.66.0.b`, Node.js `>=20`, with `commandcode-bridge` and `commandcode-router` executables.
+- API surface: authenticated OpenAI-compatible `/v1/models` and `/v1/chat/completions`, health endpoint, and the static `/dashboard/` operations console over same-origin admin configuration.
 - Model surface: 82 statically aligned models (CommandCode CLI 1.66.0) with live Provider API refresh when available.
 - Routing surface: `daily_burn_priority`, `balance_priority`, `round_robin`, and `drain_first`, with per-key model scope, concurrency, cooldown, failover, and retry controls.
 - Deployment surface: Docker/Compose, Linux install/uninstall scripts, nginx and systemd release assets, and GitHub/GitLab CI definitions.

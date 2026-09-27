@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.a-b57920?style=flat-square" alt="Version 1.66.0.a"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.b-b57920?style=flat-square" alt="Version 1.66.0.b"></a>
   <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-82-1f6f78?style=flat-square" alt="82 models"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-20%2B-9f4d2e?style=flat-square" alt="Node.js 20+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-28231f?style=flat-square" alt="MIT License"></a>
@@ -20,7 +20,7 @@
 
 <!-- README-I18N:END -->
 
-CommandCode Bridge는 CommandCode 계정을 위한 신뢰 환경용 HTTP 게이트웨이입니다. 표준 OpenAI-compatible 모델·채팅 endpoint를 제공하고 eligible upstream credential 사이에서 요청을 라우팅하며, CommandCode **1.66.0**에 맞춘 정확한 **82-model** catalog를 게시합니다. Bridge 버전은 항상 현재 CommandCode CLI 버전을 따라가며 그 뒤에 문자 접미사를 붙입니다(예: **1.66.0.a**). 접미사는 bridge 전용 release를 뜻합니다.
+CommandCode Bridge는 CommandCode 계정을 위한 신뢰 환경용 HTTP 게이트웨이입니다. 표준 OpenAI-compatible 모델·채팅 endpoint를 제공하고 eligible upstream credential 사이에서 요청을 라우팅하며, CommandCode **1.66.0**에 맞춘 정확한 **82-model** catalog를 게시합니다. Bridge 버전은 항상 현재 CommandCode CLI 버전을 따라가며 그 뒤에 문자 접미사를 붙입니다(예: **1.66.0.b**). 접미사는 bridge 전용 release를 뜻합니다.
 
 [기능](#기능) · [설치](#설치) · [사용법](#사용법) · [동작 방식](#동작-방식) · [저장소 구성](#저장소-구성) · [현재 제한](#현재-제한) · [라이선스](#라이선스)
 
@@ -40,7 +40,7 @@ CommandCode Bridge는 CommandCode 계정을 위한 신뢰 환경용 HTTP 게이�
 
 - **CLI 없는 balance alert.** billing/usage snapshot은 여전히 같은 Studio key로 `/alpha/billing`에서 가져오므로 routing과 alert은 CLI 없이 계속 동작합니다.
 
-- **모바일 dashboard.** 한국어·영어·중국어로 bind, routing, credential, model toggle을 관리하고 model을 provider별로 접습니다.
+- **운영 dashboard.** yelixir.dev 색을 입힌 kiro-lb 스타일 콘솔입니다. KPI 카드, 실시간 부하 차트, key별 잔액 도넛, 자격증명 상태, provider별 모델 catalog, routing 설정을 한국어·영어·중국어와 다크·라이트 테마로 제공합니다.
 
 - **Secret 경계.** key나 CommandCode CLI bundle을 배포하지 않고 private credential을 로드하며 diagnostics는 redacted 상태를 유지합니다.
 
@@ -114,7 +114,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | Method | Path                             | Behavior                                                                                                                                                   |
 | ------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`  | `/health`                        | Public secret-free health/runtime summary.                                                                                                                 |
-| `GET`  | `/dashboard`                     | 신뢰 network용 public read-only shell.                                                                                                                     |
+| `GET`  | `/dashboard/`                    | 신뢰 network용 public dashboard(정적 파일). `/dashboard`는 `/dashboard/`로 redirect.                                                                       |
 | `GET`  | `/v1/models`                     | `BRIDGE_API_KEY` 설정 시 인증; available model 목록.                                                                                                       |
 | `GET`  | `/v1/models/:model`              | 설정 시 인증; 단일 available model 조회.                                                                                                                   |
 | `POST` | `/v1/chat/completions`           | 설정 시 인증; streaming/non-streaming chat.                                                                                                                |
@@ -212,9 +212,35 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | xAI               | `xai/grok-4.6`                          |   500,000 |   아니요    |
 | xAI               | `xai/grok-4.7`                          |   500,000 |   아니요    |
 
-### Dashboard와 credential routing
+### 운영 dashboard
 
-`http://127.0.0.1:9992/dashboard`를 여십시오. 모바일 우선 UI는 한국어 fallback과 한국어/영어/중국어 locale을 `localStorage`에 저장합니다. online/version 상태를 보여주고 bind, client key, routing, key별 concurrency를 수정하며 redacted credential을 관리·refresh합니다. Model catalog는 provider별 fold와 enabled/total count로 표시됩니다. 빈 secret field는 기존 key를 보존합니다. Save는 JSON을 쓰고 restart가 적용합니다. Raw upstream key는 반환하지 않습니다.
+![다크 yElixir 테마의 CommandCode Bridge dashboard 개요](docs/assets/readme/dashboard-overview.png)
+
+`http://127.0.0.1:9992/dashboard/`를 여십시오(`/`와 `/dashboard`는 이 주소로 redirect합니다). Dashboard는 [`dashboard/`](dashboard/)의 정적 파일 3개로 이루어져 있습니다. 빌드 단계나 프레임워크가 없고 자체 데이터도 두지 않습니다. 5초마다 `/health`와 `/admin/config`를 읽고, 쓰기는 기존 `PUT /admin/config`, `POST /admin/restart`, `GET /admin/commandcode/credentials?refresh=true`로만 합니다. 레이아웃은 kiro-lb 운영 콘솔을 따르고, 색과 서체는 yelixir.dev 정체성을 따릅니다. 기본 다크 테마는 따뜻한 잉크·크림에 골드 강조, 라이트 테마는 페이퍼·러스트이며 Space Grotesk, DM Sans, Instrument Serif, JetBrains Mono를 씁니다.
+
+| 탭       | 보여주고 편집하는 것                                                                                                                                                                                                                           |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 개요     | KPI 카드 5개(총 잔액, 라우팅 가능 key, 처리 중 요청, 활성 모델, upstream 경로), 디더 방식의 실시간 부하 차트, key별 잔액 도넛, 그리고 상태·잔액·남은 기간·일일 소진·5시간/주간 한도 미터·처리 중 요청·마지막 선택을 보여주는 자격증명 상태 표. |
+| 자격증명 | key 이름 변경, API key 교체, 켜기/끄기, 추가·삭제. API key 칸을 비워 두면 저장된 key를 유지합니다.                                                                                                                                             |
+| 모델     | provider별로 묶은 전체 catalog와 provider별 켜짐/전체 개수, 검색, 모두 켜기·모두 끄기.                                                                                                                                                         |
+| 설정     | bind host와 port, 클라이언트 API key(생성·복사·기존 key 사용), routing policy, key당 동시 요청 한도.                                                                                                                                           |
+| 정보     | 서비스 상태(버전, upstream mode, endpoint, 기본 model, 클라이언트 key 설정 여부)와 routing 조정값(대체 policy, 잔액 조회 주기, cooldown, 전체 동시 요청).                                                                                      |
+
+- **저장 후 재시작.** 편집하면 하단에 떠 있는 바가 나타납니다. **저장**은 JSON 설정을 쓰고 **Bridge 재시작**은 이를 적용한 뒤 bridge가 돌아올 때까지 최대 30초 기다립니다. process가 스스로 재시작할 수 없는 환경이면 기다리지 않고 그 사실을 알려줍니다.
+- **실시간과 기록.** **실시간** 토글로 polling을 멈출 수 있습니다. 실시간 부하 차트는 처리 중 요청 수를 브라우저에서 샘플링한 값이며 서버에 저장하지 않으므로 페이지를 열 때마다 비어서 시작합니다.
+- **언어와 테마.** 헤더에서 한국어·영어·중국어를 고르며 `localStorage`에 저장합니다. 처음에는 브라우저 언어를 따릅니다. 테마 토글도 같은 방식으로 저장합니다.
+- **클라이언트 key.** 관리자 쓰기에 쓰는 key는 이 브라우저에만 저장됩니다. 새로 생성한 key는 다음 저장 때 전송되고 재시작 후 이 브라우저의 현재 key가 됩니다.
+- **데모 모드.** `/dashboard/?demo`는 쓰기 endpoint를 호출하지 않고 예시 자격증명과 모델을 렌더링하므로 스크린샷이나 리뷰에 쓸 수 있습니다.
+- **모바일.** 720 px 미만에서는 탭이 아이콘만 남고 카드가 세로로 쌓이며, 넓은 표는 카드 안에서 가로로 스크롤됩니다.
+
+<p align="center">
+  <img src="docs/assets/readme/dashboard-models.png" alt="provider별로 묶은 모델 탭" width="560">
+  <img src="docs/assets/readme/dashboard-mobile.png" alt="휴대폰에서 본 한국어 dashboard" width="200">
+</p>
+
+이전 단일 파일 dashboard(`src/dashboard.ts`)는 1.66.0.b에서 퇴역했습니다. 마지막 버전은 Git 태그 `legacy-dashboard-1.66.0.a`로 보존됩니다.
+
+### Credential routing
 
 `daily_burn_priority`는 required daily burn을 가중하는 기본값이며 `depletion_aware`는 legacy alias입니다. `balance_priority`는 usable balance, `round_robin`은 smooth weight rotation, `drain_first`는 남은 기한이 가장 적은 eligible key를 먼저 소진합니다. 모든 policy는 먼저 1일 안에 만료되는 eligible credential로 범위를 좁힙니다. Manual disable, `allowedModels`, in-flight cap, exhausted/expired balance, auth failure, 429/5xx/timeout cooldown은 key를 제외할 수 있습니다. 요청 하나는 key 하나에 고정되고 visible output 전까지만 failover합니다.
 
@@ -226,7 +252,7 @@ Alpha와 Provider 모두 CLI 1.66.0의 텍스트 전용 모델 목록과 별칭�
 
 저장된 dashboard catalog에서 업그레이드하면 현재 model의 enabled state와 모든 custom model은 보존하고, built-in metadata는 1.66.0 canonical 정의로 갱신합니다. Ox Alpha와 MiniMax M3/M2.7 Free를 포함한 retired built-in은 unknown upstream model로 전달하지 않으며, 제거된 default가 설정돼 있으면 `deepseek/deepseek-v4-pro`로 안전하게 fallback합니다.
 
-브라우저에 key가 저장된 기존 사용자는 그대로 동작합니다. 새 브라우저에서는 저장·재시작 전에 **현재 Admin API Key**에 기존 key를 한 번 입력합니다. key 없는 runtime은 실제 loopback 연결이며 Host도 loopback인 경우에만 bootstrap할 수 있습니다.
+Dashboard의 관리자 쓰기는 이 브라우저에 저장된 클라이언트 API key를 씁니다. 새 브라우저에서는 저장·재시작 전에 **설정 → 클라이언트 API key**에 현재 key를 붙여넣고 **이 key 사용**을 누르십시오. key 없는 runtime은 실제 loopback 연결이며 Host도 loopback인 경우에만 bootstrap할 수 있습니다.
 
 Dashboard의 재시작 버튼은 process가 supervise되는 환경에서만 저장한 설정을 적용합니다. systemd는 자동으로 감지하고, restart 정책을 둔 Docker를 포함한 그 밖의 supervisor는 `COMMANDCODE_BRIDGE_RESTART_MODE=exit`가 필요하며 제공되는 두 Compose 파일에 모두 설정돼 있습니다. 설정이 없으면 bridge는 종료를 거부하고 `POST /admin/restart`는 `restart_requested: false`를 반환하며, 저장한 설정은 service를 직접 재시작할 때까지 적용 대기 상태로 남습니다.
 
@@ -251,7 +277,8 @@ Credential 우선순위는 `COMMANDCODE_CREDENTIALS_FILE`, `COMMANDCODE_CREDENTI
 ## 저장소 구성
 
 ```text
-src/                 bridge, catalog, routing, dashboard, and API implementation
+src/                 bridge, catalog, routing, and API implementation
+dashboard/           static operations dashboard (HTML, CSS, JS)
 tests/               deterministic contract and behavior tests
 docs/                architecture, deployment, security, and documentation assets
 release/             Compose and production deployment material
@@ -262,7 +289,7 @@ install.sh           Linux rootless user-systemd installer
 
 ## 현재 제한
 
-- **신뢰 network 경계.** Read-only dashboard endpoint도 redacted 운영 metadata를 보이므로 localhost 또는 trusted VPN/tailnet에 두고 localhost 밖에서는 `BRIDGE_API_KEY`를 설정하십시오.
+- **신뢰 network 경계.** Dashboard와 그 읽기 endpoint는 redacted 운영 metadata를 보여주고, 서체는 yelixir.dev에서 불러옵니다(오프라인에서는 시스템 서체 사용). localhost 또는 trusted VPN/tailnet에 두고 localhost 밖에서는 `BRIDGE_API_KEY`를 설정하십시오.
 
 - **Claude는 alpha 터널 사용.** Provider API는 Claude를 Anthropic `/messages` format으로만 서빙하므로 Claude 요청은 항상 `/alpha/generate`로 갑니다. 모든 model을 그 경로로 강제하려면 `COMMANDCODE_UPSTREAM_MODE=alpha`를 설정하십시오.
 

@@ -728,12 +728,11 @@ describe("JSON dashboard configuration", () => {
       configAuthPaths: [],
       configOverrides: { bridgeApiKey: "bridge-secret", logLevel: "silent" },
     });
-    const response = await app.inject({ method: "GET", url: "/dashboard" });
+    const response = await app.inject({ method: "GET", url: "/dashboard/" });
     expect(response.statusCode).toBe(200);
     expect(response.headers["content-type"]).toContain("text/html");
-    expect(response.body).toContain("CommandCode Bridge Console");
-    expect(response.body).toContain("Client API Key");
-    expect(response.body).not.toContain("Current Admin API Key");
+    expect(response.body).toContain("CommandCode <em>Bridge</em>");
+    expect(response.body).toContain('src="./app.js"');
     expect(response.body).not.toContain("bridge-secret");
     expect(response.body).not.toContain("configFilePath");
     expect(response.body).not.toContain(process.env.HOME ?? "__NO_HOME__");

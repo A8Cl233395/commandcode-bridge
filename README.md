@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.a-b57920?style=flat-square" alt="Version 1.66.0.a"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.b-b57920?style=flat-square" alt="Version 1.66.0.b"></a>
   <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-82-1f6f78?style=flat-square" alt="82 models"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-20%2B-9f4d2e?style=flat-square" alt="Node.js 20+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-28231f?style=flat-square" alt="MIT License"></a>
@@ -20,7 +20,7 @@
 
 <!-- README-I18N:END -->
 
-CommandCode Bridge is a trusted-environment HTTP gateway for a CommandCode account. It presents standard OpenAI-compatible model and chat endpoints, routes work across eligible upstream credentials, and publishes an exact **82-model** catalog aligned with CommandCode **1.66.0**. The bridge version always tracks the current CommandCode CLI version with a letter suffix (for example **1.66.0.a**); the suffix marks bridge-only releases.
+CommandCode Bridge is a trusted-environment HTTP gateway for a CommandCode account. It presents standard OpenAI-compatible model and chat endpoints, routes work across eligible upstream credentials, and publishes an exact **82-model** catalog aligned with CommandCode **1.66.0**. The bridge version always tracks the current CommandCode CLI version with a letter suffix (for example **1.66.0.b**); the suffix marks bridge-only releases.
 
 [What it does](#what-it-does) · [Install](#install) · [Usage](#usage) · [How it works](#how-it-works) · [Repository layout](#repository-layout) · [Current limitations](#current-limitations) · [License](#license)
 
@@ -40,7 +40,7 @@ CommandCode Bridge is a trusted-environment HTTP gateway for a CommandCode accou
 
 - **Balance alerts without the CLI.** Billing and usage snapshots still come from the `/alpha/billing` surface with the same Studio key, so routing and alerts keep working with zero CLI involvement.
 
-- **Mobile dashboard.** Manages bind settings, routing, credentials, and model toggles in Korean, English, and Chinese, with models folded by provider.
+- **Operations dashboard.** A kiro-lb style console in yelixir.dev colours: KPI cards, a live-load chart, a balance-by-key donut, credential health, the model catalog by provider, and routing settings, in Korean, English, and Chinese with dark and light themes.
 
 - **Secret boundary.** Loads private credentials without shipping keys or the CommandCode CLI bundle; diagnostics remain redacted.
 
@@ -114,7 +114,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | Method | Path                             | Behavior                                                                                                                                                                                       |
 | ------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET`  | `/health`                        | Public, secret-free health and runtime summary.                                                                                                                                                |
-| `GET`  | `/dashboard`                     | Public read-only shell for trusted networks.                                                                                                                                                   |
+| `GET`  | `/dashboard/`                    | Public dashboard (static files) for trusted networks; `/dashboard` redirects to `/dashboard/`.                                                                                                 |
 | `GET`  | `/v1/models`                     | Authenticated when `BRIDGE_API_KEY` is configured; lists available models.                                                                                                                     |
 | `GET`  | `/v1/models/:model`              | Authenticated when configured; retrieves one available model.                                                                                                                                  |
 | `POST` | `/v1/chat/completions`           | Authenticated when configured; streaming or non-streaming chat.                                                                                                                                |
@@ -212,9 +212,35 @@ Each model object includes `id`, `object`, `created`, and provider-derived `owne
 | xAI               | `xai/grok-4.6`                          |   500,000 |   No    |
 | xAI               | `xai/grok-4.7`                          |   500,000 |   No    |
 
-### Dashboard and credential routing
+### Operations dashboard
 
-Open `http://127.0.0.1:9992/dashboard`. The mobile-first UI stores its Korean/English/Chinese locale in `localStorage` with Korean fallback. It shows online/version state; edits bind, client key, routing and per-key concurrency; manages and refreshes redacted credentials; and folds the model catalog by provider with enabled/total counts. Secret fields left blank preserve existing keys. Save writes JSON and restart applies changes. Raw upstream keys are never returned.
+![CommandCode Bridge dashboard overview in the dark yElixir theme](docs/assets/readme/dashboard-overview.png)
+
+Open `http://127.0.0.1:9992/dashboard/` (`/` and `/dashboard` redirect there). The dashboard is three static files in [`dashboard/`](dashboard/): no build step, no framework, and no data of its own. It reads `/health` and `/admin/config` every 5 seconds and writes only through the existing `PUT /admin/config`, `POST /admin/restart`, and `GET /admin/commandcode/credentials?refresh=true`. Its layout follows the kiro-lb operations console; its colours and type are the yelixir.dev identity: warm ink and cream with gold accents in the default dark theme, paper and rust in the light theme, Space Grotesk, DM Sans, Instrument Serif, and JetBrains Mono.
+
+| Tab         | What it shows and edits                                                                                                                                                                                                                                                                               |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview    | Five KPI cards (total balance, routable keys, in-flight requests, enabled models, upstream path), a dithered live-load chart, a balance-by-key donut, and a credential health table with status, balance, days left, daily burn, 5-hour and weekly limit meters, in-flight count, and last selection. |
+| Credentials | Rename keys, replace an API key, turn a key on or off, add or remove keys. An empty API key field keeps the stored key.                                                                                                                                                                               |
+| Models      | The full catalog grouped by provider with per-provider on/total counts, search, and enable-all or disable-all.                                                                                                                                                                                        |
+| Settings    | Bind host and port, the client API key (generate, copy, or use an existing key), the routing policy, and the per-key concurrency limit.                                                                                                                                                               |
+| Info        | Service state (version, upstream mode, endpoint, default model, client key presence) and routing tunables (fallback policy, balance refresh, cooldown, total concurrency).                                                                                                                            |
+
+- **Save, then restart.** Edits raise a floating bar. **Save** writes the JSON config; **Restart bridge** applies it and waits up to 30 seconds for the bridge to come back. Where the process cannot restart itself the dashboard says so instead of waiting.
+- **Live and history.** The **Live** toggle pauses polling. The live-load chart is sampled in the browser from the in-flight counts and is not stored on the server, so it starts empty on every page load.
+- **Language and theme.** Korean, English, and Chinese are chosen from the header and stored in `localStorage` with the browser language as the first guess. The theme toggle is stored the same way.
+- **Client key.** The key used for admin writes is stored only in this browser. A newly generated key is sent with the next save and becomes the browser's current key after restart.
+- **Demo mode.** `/dashboard/?demo` renders sample credentials and models without calling any write endpoint, which is useful for screenshots and reviews.
+- **Mobile.** Below 720 px the tabs collapse to icons, cards stack, and wide tables scroll horizontally inside their card.
+
+<p align="center">
+  <img src="docs/assets/readme/dashboard-models.png" alt="Models tab grouped by provider" width="560">
+  <img src="docs/assets/readme/dashboard-mobile.png" alt="Dashboard on a phone in Korean" width="200">
+</p>
+
+The previous single-file dashboard (`src/dashboard.ts`) was retired in 1.66.0.b. Its last version is kept in Git history under the tag `legacy-dashboard-1.66.0.a`.
+
+### Credential routing
 
 `daily_burn_priority` is the default and weights required daily burn (`depletion_aware` is its legacy alias); `balance_priority` prefers usable balance; `round_robin` rotates smoothly by weight; `drain_first` drains the eligible key with the least remaining time, then moves to the next. Every policy first narrows to eligible credentials expiring within 1 day. Manual disablement, `allowedModels`, in-flight caps, exhausted/expired balance, auth failure, and 429/5xx/timeout cooldown can exclude a key. Each request stays on one key; failover occurs only before visible output.
 
@@ -226,7 +252,7 @@ Image inputs are removed for the CLI 1.66.0 text-only model list in both Alpha a
 
 Upgrades from a persisted dashboard catalog preserve each current model's enabled state and all custom models, while refreshing built-in metadata from the 1.66.0 canonical definitions. Retired built-ins, including Ox Alpha and the MiniMax M3/M2.7 Free models, are removed rather than forwarded as unknown upstream models; a retired configured default falls back to `deepseek/deepseek-v4-pro`.
 
-Existing browsers with a saved key continue without interruption. On a fresh browser, enter the current key in **Current Admin API Key** before saving or restarting. A runtime with no key can bootstrap only from a real loopback connection whose Host is also loopback.
+Admin writes from the dashboard use the client API key stored in this browser. On a fresh browser, paste the current key into **Settings → Client API key** and choose **Use this key** before saving or restarting. A runtime with no key can bootstrap only from a real loopback connection whose Host is also loopback.
 
 The dashboard restart button applies a saved configuration only where the process is supervised. systemd is detected automatically; every other supervisor, including Docker with a restart policy, needs `COMMANDCODE_BRIDGE_RESTART_MODE=exit`, which both shipped Compose files set. Without it the bridge refuses to exit, `POST /admin/restart` reports `restart_requested: false`, and the saved configuration stays pending until the service is restarted by hand.
 
@@ -251,7 +277,8 @@ Credential precedence is `COMMANDCODE_CREDENTIALS_FILE`, `COMMANDCODE_CREDENTIAL
 ## Repository layout
 
 ```text
-src/                 bridge, catalog, routing, dashboard, and API implementation
+src/                 bridge, catalog, routing, and API implementation
+dashboard/           static operations dashboard (HTML, CSS, JS)
 tests/               deterministic contract and behavior tests
 docs/                architecture, deployment, security, and documentation assets
 release/             Compose and production deployment material
@@ -262,7 +289,7 @@ Development verification is `npm run verify`; runtime verification is `npm run s
 
 ## Current limitations
 
-- **Trusted network boundary.** Read-only dashboard endpoints reveal redacted operational metadata; keep them on localhost or a trusted VPN/tailnet and set `BRIDGE_API_KEY` outside localhost.
+- **Trusted network boundary.** The dashboard and its read endpoints show redacted operational metadata, and its fonts load from yelixir.dev (the system font stacks are used offline); keep it on localhost or a trusted VPN/tailnet and set `BRIDGE_API_KEY` outside localhost.
 
 - **Claude traffic uses the alpha tunnel.** The Provider API serves Claude models only through the Anthropic `/messages` format, so Claude requests always go to `/alpha/generate`; set `COMMANDCODE_UPSTREAM_MODE=alpha` to force that path for every model.
 

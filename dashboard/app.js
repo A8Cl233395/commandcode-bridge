@@ -32,7 +32,6 @@
   const I18N = {
     ko: {
       skip: "본문으로 건너뛰기",
-      previewLink: "미리보기 · 기존 대시보드",
       checking: "확인 중",
       online: "온라인",
       offline: "오프라인",
@@ -180,7 +179,6 @@
     },
     en: {
       skip: "Skip to content",
-      previewLink: "Preview · current dashboard",
       checking: "Checking",
       online: "Online",
       offline: "Offline",
@@ -331,7 +329,6 @@
     },
     zh: {
       skip: "跳到正文",
-      previewLink: "预览 · 当前仪表盘",
       checking: "检查中",
       online: "在线",
       offline: "离线",
@@ -568,11 +565,18 @@
   }
 
   async function api(path, init = {}) {
-    const response = await fetch(path, {
+    const request = {
       ...init,
       cache: "no-store",
       headers: { ...authHeaders(), ...(init.headers || {}) },
-    });
+    };
+    let response;
+    try {
+      response = await fetch(path, request);
+    } catch (error) {
+      if (!location.hostname || location.port) throw error;
+      response = await fetch(`http://${location.hostname}:9992${path}`, request);
+    }
     if (!response.ok) throw new Error(await response.text());
     return response.json();
   }
@@ -1723,7 +1727,7 @@
   function demoHealth() {
     return {
       status: "ok",
-      version: "1.66.0.a",
+      version: "1.66.0.b",
       upstream: "commandcode-alpha-generate",
       endpoint: "127.0.0.1:9992",
       default_model: "deepseek/deepseek-v4-pro",
@@ -1845,7 +1849,7 @@
         }),
       ],
       bridge: {
-        version: "1.66.0.a",
+        version: "1.66.0.b",
         upstream_mode: "auto",
         endpoint: "127.0.0.1:9992",
       },

@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.a-b57920?style=flat-square" alt="Version 1.66.0.a"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.b-b57920?style=flat-square" alt="Version 1.66.0.b"></a>
   <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-82-1f6f78?style=flat-square" alt="82 models"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-20%2B-9f4d2e?style=flat-square" alt="Node.js 20+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-28231f?style=flat-square" alt="MIT License"></a>
@@ -20,7 +20,7 @@
 
 <!-- README-I18N:END -->
 
-CommandCode Bridge 是面向 CommandCode 账号的可信环境 HTTP 网关。它提供标准 OpenAI-compatible 模型与聊天端点，在符合条件的上游凭据之间路由请求，并发布与 CommandCode **1.66.0** 对齐的准确 **82-model** catalog。Bridge 版本始终跟随当前 CommandCode CLI 版本并在其后附加字母后缀（例如 **1.66.0.a**）；后缀表示仅限 Bridge 的发布。
+CommandCode Bridge 是面向 CommandCode 账号的可信环境 HTTP 网关。它提供标准 OpenAI-compatible 模型与聊天端点，在符合条件的上游凭据之间路由请求，并发布与 CommandCode **1.66.0** 对齐的准确 **82-model** catalog。Bridge 版本始终跟随当前 CommandCode CLI 版本并在其后附加字母后缀（例如 **1.66.0.b**）；后缀表示仅限 Bridge 的发布。
 
 [功能](#功能) · [安装](#安装) · [用法](#用法) · [工作原理](#工作原理) · [仓库布局](#仓库布局) · [当前限制](#当前限制) · [许可证](#许可证)
 
@@ -40,7 +40,7 @@ CommandCode Bridge 是面向 CommandCode 账号的可信环境 HTTP 网关。它
 
 - **无 CLI 的 balance alert。** billing/usage snapshot 仍用同一个 Studio key 从 `/alpha/billing` 获取，routing 与 alert 在零 CLI 参与下继续工作。
 
-- **移动优先 dashboard。** 以韩文、英文、中文管理 bind、routing、credential、model toggle，并按 provider 折叠模型。
+- **运维 dashboard。** 采用 yelixir.dev 配色的 kiro-lb 风格控制台：KPI 卡片、实时负载图、各 key 余额环形图、凭据状态、按 provider 分组的模型目录和路由设置，支持韩文、英文、中文以及深色与浅色主题。
 
 - **Secret 边界。** 不分发 key 或 CommandCode CLI bundle；加载 private credential，diagnostics 保持 redacted。
 
@@ -114,7 +114,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | Method | Path                             | Behavior                                                                                                                     |
 | ------ | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `GET`  | `/health`                        | Public、secret-free health/runtime summary。                                                                                 |
-| `GET`  | `/dashboard`                     | 可信 network 的 public read-only shell。                                                                                     |
+| `GET`  | `/dashboard/`                    | 可信 network 的 public dashboard（静态文件）；`/dashboard` 重定向到 `/dashboard/`。                                          |
 | `GET`  | `/v1/models`                     | 配置 `BRIDGE_API_KEY` 时认证；列出 available model。                                                                         |
 | `GET`  | `/v1/models/:model`              | 配置时认证；查询一个 available model。                                                                                       |
 | `POST` | `/v1/chat/completions`           | 配置时认证；streaming/non-streaming chat。                                                                                   |
@@ -212,9 +212,35 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | xAI               | `xai/grok-4.6`                          |   500,000 |    否    |
 | xAI               | `xai/grok-4.7`                          |   500,000 |    否    |
 
-### Dashboard 与 credential routing
+### 运维 dashboard
 
-打开 `http://127.0.0.1:9992/dashboard`。移动优先 UI 以韩文为 fallback，并把韩文/英文/中文 locale 存入 `localStorage`。它显示 online/version，编辑 bind、client key、routing、每 key concurrency，管理和刷新 redacted credential；model catalog 按 provider fold，显示 enabled/total count。空 secret field 保留原 key。Save 写入 JSON，restart 后应用。永不返回 raw upstream key。
+![深色 yElixir 主题下的 CommandCode Bridge dashboard 概览](docs/assets/readme/dashboard-overview.png)
+
+打开 `http://127.0.0.1:9992/dashboard/`（`/` 和 `/dashboard` 会重定向到这里）。Dashboard 由 [`dashboard/`](dashboard/) 中的 3 个静态文件组成：没有构建步骤、没有框架，也不保存自己的数据。它每 5 秒读取 `/health` 和 `/admin/config`，写入只通过现有的 `PUT /admin/config`、`POST /admin/restart` 和 `GET /admin/commandcode/credentials?refresh=true`。布局沿用 kiro-lb 运维控制台，颜色与字体沿用 yelixir.dev 的品牌识别：默认深色主题为暖墨色与奶油色配金色强调，浅色主题为纸色与锈红色，字体为 Space Grotesk、DM Sans、Instrument Serif 和 JetBrains Mono。
+
+| 标签 | 显示与编辑的内容                                                                                                                                                                                                  |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 概览 | 5 张 KPI 卡片（总余额、可路由 key、处理中请求、已启用模型、上游路径）、抖动风格的实时负载图、各 key 余额环形图，以及显示状态、余额、剩余天数、每日消耗、5 小时/每周限额进度条、处理中请求和最近选择的凭据状态表。 |
+| 凭据 | 重命名 key、替换 API key、启用或停用、添加或删除 key。API key 留空则保留已存储的 key。                                                                                                                            |
+| 模型 | 按 provider 分组的完整目录，含每个 provider 的启用/总数、搜索、全部启用和全部停用。                                                                                                                               |
+| 设置 | 绑定 host 与端口、客户端 API key（生成、复制或使用现有 key）、路由策略，以及每个 key 的并发上限。                                                                                                                 |
+| 信息 | 服务状态（版本、上游模式、端点、默认模型、客户端 key 是否已配置）和路由参数（备用策略、余额刷新周期、冷却时间、总并发）。                                                                                         |
+
+- **先保存，再重启。** 编辑后会出现悬浮操作栏。**保存**写入 JSON 配置；**重启 Bridge** 应用配置，并最多等待 30 秒直到 bridge 恢复。如果进程无法自行重启，dashboard 会直接说明，而不是等待。
+- **实时与历史。** **实时** 开关可暂停轮询。实时负载图由浏览器根据处理中请求数采样，不保存在服务器上，因此每次打开页面都从空白开始。
+- **语言与主题。** 在页头选择韩文、英文或中文并保存在 `localStorage`，首次按浏览器语言选择。主题开关以同样方式保存。
+- **客户端 key。** 用于管理写入的 key 只保存在当前浏览器。新生成的 key 会在下次保存时发送，并在重启后成为该浏览器的当前 key。
+- **演示模式。** `/dashboard/?demo` 渲染示例凭据和模型，不调用任何写入端点，适合截图和评审。
+- **移动端。** 宽度小于 720 px 时，标签只显示图标，卡片纵向堆叠，宽表格在卡片内横向滚动。
+
+<p align="center">
+  <img src="docs/assets/readme/dashboard-models.png" alt="按 provider 分组的模型标签页" width="560">
+  <img src="docs/assets/readme/dashboard-mobile.png" alt="手机上的韩文 dashboard" width="200">
+</p>
+
+旧的单文件 dashboard（`src/dashboard.ts`）已在 1.66.0.b 中退役，其最后版本以 Git 标签 `legacy-dashboard-1.66.0.a` 保留。
+
+### Credential routing
 
 `daily_burn_priority` 是按 required daily burn 加权的默认值，`depletion_aware` 是 legacy alias；`balance_priority` 偏好 usable balance；`round_robin` 平滑按 weight 轮换；`drain_first` 优先耗尽剩余期限最短的 eligible key，再移动到下一个。所有 policy 先缩小到 1 天内到期的 eligible credential。Manual disable、`allowedModels`、in-flight cap、exhausted/expired balance、auth failure、429/5xx/timeout cooldown 都可排除 key。每个请求固定一个 key；仅在 visible output 前 failover。
 
@@ -226,7 +252,7 @@ Alpha 和 Provider 均根据 CLI 1.66.0 的纯文本模型列表移除图片输�
 
 从持久化的 dashboard catalog 升级时，会保留当前 model 的 enabled state 和所有 custom model，并用 1.66.0 canonical 定义刷新 built-in metadata。包括 Ox Alpha 和 MiniMax M3/M2.7 Free 在内的 retired built-in 不会作为 unknown upstream model 转发；若 default 已退役，则安全回退到 `deepseek/deepseek-v4-pro`。
 
-浏览器已保存 key 的现有用户可继续使用。新浏览器在保存或重启前，需要在 **当前管理员 API Key** 中输入一次现有 key。无 key runtime 仅在真实 loopback 连接且 Host 也是 loopback 时允许 bootstrap。
+Dashboard 的管理写入使用当前浏览器中保存的客户端 API key。在新浏览器中，保存或重启前请把当前 key 粘贴到 **设置 → 客户端 API key** 并点击 **使用此 key**。无 key runtime 仅在真实 loopback 连接且 Host 也是 loopback 时允许 bootstrap。
 
 Dashboard 的重启按钮只有在进程被 supervise 时才能应用已保存的配置。systemd 会被自动检测；包括配置了 restart 策略的 Docker 在内的其他 supervisor 需要 `COMMANDCODE_BRIDGE_RESTART_MODE=exit`，随附的两个 Compose 文件均已设置。未设置时 bridge 拒绝退出，`POST /admin/restart` 返回 `restart_requested: false`，已保存的配置会保持待应用状态，直到手动重启服务。
 
@@ -251,7 +277,8 @@ Credential 优先级为 `COMMANDCODE_CREDENTIALS_FILE`、`COMMANDCODE_CREDENTIAL
 ## 仓库布局
 
 ```text
-src/                 bridge, catalog, routing, dashboard, and API implementation
+src/                 bridge, catalog, routing, and API implementation
+dashboard/           static operations dashboard (HTML, CSS, JS)
 tests/               deterministic contract and behavior tests
 docs/                architecture, deployment, security, and documentation assets
 release/             Compose and production deployment material
@@ -262,7 +289,7 @@ install.sh           Linux rootless user-systemd installer
 
 ## 当前限制
 
-- **可信 network 边界。** Read-only dashboard endpoint 会显示 redacted 运维 metadata；只放在 localhost 或 trusted VPN/tailnet，离开 localhost 时设置 `BRIDGE_API_KEY`。
+- **可信 network 边界。** Dashboard 及其读取端点会显示 redacted 运维 metadata，字体从 yelixir.dev 加载（离线时使用系统字体）；只放在 localhost 或 trusted VPN/tailnet，离开 localhost 时设置 `BRIDGE_API_KEY`。
 
 - **Claude 走 alpha 隧道。** Provider API 只以 Anthropic `/messages` format 提供 Claude，因此 Claude 请求始终走 `/alpha/generate`；要强制所有模型走该路径，设置 `COMMANDCODE_UPSTREAM_MODE=alpha`。
 
