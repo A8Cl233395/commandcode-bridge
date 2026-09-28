@@ -360,6 +360,29 @@ describe("CommandCode client credential routing", () => {
     });
   });
 
+  it("keeps one conversation on one key across turns when given a session key", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async (input) => {
+      const url = String(input);
+      const billing = billingResponse(url);
+      if (billing) return billing;
+      return new Response(
+        'data: {"type":"text-delta","text":"ok"}\ndata: {"type":"finish","finishReason":"stop"}\n',
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new CommandCodeClient(baseConfig);
+    await collectEvents(client.generate(generateBody, undefined, { sessionKey: "conversation-a" }));
+    await collectEvents(client.generate(generateBody, undefined, { sessionKey: "conversation-a" }));
+
+    const keys = postCalls(fetchMock).map(
+      (call) => ((call[1] as RequestInit).headers as Record<string, string>).Authorization,
+    );
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).toBe(keys[0]);
+  });
+
   it("fails over to another credential when an upstream stream error marks the first key depleted", async () => {
     const postResponses = [
       new Response(

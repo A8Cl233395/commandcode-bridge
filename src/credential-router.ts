@@ -8,6 +8,8 @@ import type {
 const DAY_MS = 86_400_000;
 const MIN_DAYS_LEFT = 0.25;
 const DEFAULT_BILLING_TIMEOUT_MS = 10_000;
+const DEFAULT_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
+const DEFAULT_SESSION_CAPACITY = 10_000;
 
 export interface CommandCodeCredentialState {
   credential: CommandCodeCredential;
@@ -42,6 +44,8 @@ export interface CommandCodeCredentialDiagnostic {
   disabledUntilIso: string | null;
   disabledForMs: number;
   inFlight: number;
+  /** Conversations currently pinned to this key by session affinity. */
+  activeSessions: number;
   lastSelectedAt: number | null;
   lastSelectedAtIso: string | null;
   currentWeight: number;
@@ -81,11 +85,17 @@ export interface CommandCodeCredentialRouterOptions {
     signal: AbortSignal,
   ) => Promise<CommandCodeBillingSnapshot>;
   validateBillingBeforeSelect?: boolean;
+  /** How long a conversation stays pinned to the key that last served it. 0 disables affinity. */
+  sessionTtlMs?: number;
+  /** Upper bound on remembered conversations; the least recently served is evicted first. */
+  sessionCapacity?: number;
 }
 
 export interface SelectCredentialOptions {
   model: string;
   excludeIds?: Iterable<string>;
+  /** Stable conversation key; turns of one conversation prefer the key that served it. */
+  sessionKey?: string;
   /** Re-include cooldown-disabled credentials so an in-request retry can re-try them. */
   ignoreCooldown?: boolean;
 }
@@ -232,6 +242,9 @@ export class CommandCodeCredentialRouter {
       ) => Promise<CommandCodeBillingSnapshot>)
     | undefined;
   private readonly validateBillingBeforeSelect: boolean;
+  private readonly sessionTtlMs: number;
+  private readonly sessionCapacity: number;
+  private readonly sessions = new Map<string, { credentialId: string; servedAt: number }>();
 
   public constructor(options: CommandCodeCredentialRouterOptions) {
     this.policy = options.policy === "depletion_aware" ? "daily_burn_priority" : options.policy;
@@ -247,6 +260,8 @@ export class CommandCodeCredentialRouter {
     this.now = options.now ?? Date.now;
     this.billingProvider = options.billingProvider;
     this.validateBillingBeforeSelect = options.validateBillingBeforeSelect ?? false;
+    this.sessionTtlMs = Math.max(0, options.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS);
+    this.sessionCapacity = positive(options.sessionCapacity, DEFAULT_SESSION_CAPACITY);
 
     const ids = new Set<string>();
     this.states = options.credentials.map((credential) => {
@@ -283,6 +298,14 @@ export class CommandCodeCredentialRouter {
 
   public get credentialCount(): number {
     return this.states.length;
+  }
+
+  public get sessionCount(): number {
+    return this.sessions.size;
+  }
+
+  public pinnedCredentialId(sessionKey: string): string | undefined {
+    return this.sessions.get(sessionKey)?.credentialId;
   }
 
   public snapshot(): CommandCodeCredentialState[] {
@@ -324,6 +347,11 @@ export class CommandCodeCredentialRouter {
   }
 
   public diagnostics(now = this.now()): CommandCodeCredentialDiagnostic[] {
+    const sessionsById = new Map<string, number>();
+    for (const pin of this.sessions.values()) {
+      if (now - pin.servedAt >= this.sessionTtlMs) continue;
+      sessionsById.set(pin.credentialId, (sessionsById.get(pin.credentialId) ?? 0) + 1);
+    }
     return this.states.map((state) => {
       const disabledUntil = state.disabledUntil > now ? state.disabledUntil : null;
       const billing = state.billing;
@@ -347,6 +375,7 @@ export class CommandCodeCredentialRouter {
               ? Number.MAX_SAFE_INTEGER
               : Math.max(0, disabledUntil - now),
         inFlight: state.inFlight,
+        activeSessions: sessionsById.get(state.credential.id) ?? 0,
         lastSelectedAt: state.lastSelectedAt > 0 ? state.lastSelectedAt : null,
         lastSelectedAtIso:
           state.lastSelectedAt > 0 ? new Date(state.lastSelectedAt).toISOString() : null,
@@ -419,10 +448,41 @@ export class CommandCodeCredentialRouter {
     const urgentCandidates = candidates.filter((state) => hasUrgentExpiry(state, now));
     if (urgentCandidates.length > 0) candidates = urgentCandidates;
 
-    const selected = this.selectForPolicy(this.policy, candidates, now);
+    const selected =
+      this.pinnedCandidate(options.sessionKey, candidates, now) ??
+      this.selectForPolicy(this.policy, candidates, now);
     selected.inFlight += 1;
     selected.lastSelectedAt = now;
+    this.rememberSession(options.sessionKey, selected.credential.id, now);
     return selected.credential;
+  }
+
+  // A pin is a preference only: health, capacity, urgency, and exclusion filters already ran,
+  // so a failed or saturated key simply loses the conversation to the policy's next choice.
+  private pinnedCandidate(
+    sessionKey: string | undefined,
+    candidates: CommandCodeCredentialState[],
+    now: number,
+  ): CommandCodeCredentialState | undefined {
+    if (!sessionKey || this.sessionTtlMs === 0) return undefined;
+    const pin = this.sessions.get(sessionKey);
+    if (!pin) return undefined;
+    if (now - pin.servedAt >= this.sessionTtlMs) {
+      this.sessions.delete(sessionKey);
+      return undefined;
+    }
+    return candidates.find((state) => state.credential.id === pin.credentialId);
+  }
+
+  private rememberSession(sessionKey: string | undefined, credentialId: string, now: number): void {
+    if (!sessionKey || this.sessionTtlMs === 0) return;
+    this.sessions.delete(sessionKey);
+    this.sessions.set(sessionKey, { credentialId, servedAt: now });
+    while (this.sessions.size > this.sessionCapacity) {
+      const oldest = this.sessions.keys().next().value;
+      if (oldest === undefined) break;
+      this.sessions.delete(oldest);
+    }
   }
 
   public recordSuccess(id: string): void {

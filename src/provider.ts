@@ -16,7 +16,12 @@ import {
   type CommandCodeCredentialRouter,
   type SelectCredentialOptions,
 } from "./credential-router.js";
-import type { BridgeConfig, CommandCodeCredential, OpenAIChatCompletionRequest } from "./types.js";
+import type {
+  BridgeConfig,
+  CommandCodeCredential,
+  CommandCodeGenerateOptions,
+  OpenAIChatCompletionRequest,
+} from "./types.js";
 
 export interface ProviderChatRequestBody extends Omit<OpenAIChatCompletionRequest, "model"> {
   model: string;
@@ -97,7 +102,11 @@ export class CommandCodeProviderClient {
     this.router = createCommandCodeCredentialRouter(config);
   }
 
-  public async chat(body: ProviderChatRequestBody, signal?: AbortSignal): Promise<Response> {
+  public async chat(
+    body: ProviderChatRequestBody,
+    signal?: AbortSignal,
+    options: CommandCodeGenerateOptions = {},
+  ): Promise<Response> {
     if (this.router.credentialCount === 0) throw new CommandCodeAuthError();
 
     const timeoutSignal = createTimeoutSignal(this.config.timeoutMs);
@@ -113,6 +122,7 @@ export class CommandCodeProviderClient {
         const selectOptions: SelectCredentialOptions = {
           model: body.model,
           ignoreCooldown: attempt > 0,
+          ...(options.sessionKey ? { sessionKey: options.sessionKey } : {}),
         };
         if (fatalIds.size + retryableFailed.size > 0) {
           selectOptions.excludeIds = new Set([...fatalIds, ...retryableFailed]);
@@ -124,6 +134,7 @@ export class CommandCodeProviderClient {
           credential = await this.router.select({
             model: body.model,
             ignoreCooldown: true,
+            ...(options.sessionKey ? { sessionKey: options.sessionKey } : {}),
           });
         } else {
           if (lastError instanceof Error) throw lastError;

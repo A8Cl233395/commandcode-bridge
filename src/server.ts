@@ -55,7 +55,11 @@ import {
   NoAvailableCommandCodeCredentialError,
 } from "./credential-router.js";
 import { CommandCodeBalanceAlertManager } from "./balance-alerts.js";
-import { buildCommandCodeGenerateBody } from "./converter.js";
+import {
+  buildCommandCodeGenerateBody,
+  conversationSessionKey,
+  conversationThreadId,
+} from "./converter.js";
 import { BRIDGE_VERSION } from "./version.js";
 import {
   CommandCodeEmptyResponseError,
@@ -63,7 +67,12 @@ import {
   CommandCodeEventError,
   streamOpenAIChunks,
 } from "./openai.js";
-import type { BridgeConfig, CommandCodeUpstream, OpenAIChatCompletionRequest } from "./types.js";
+import type {
+  BridgeConfig,
+  CommandCodeGenerateOptions,
+  CommandCodeUpstream,
+  OpenAIChatCompletionRequest,
+} from "./types.js";
 
 const toolCallSchema = z.object({
   id: z.string().optional(),
@@ -702,6 +711,9 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
           (config.upstreamMode === "auto" && providerAccessAvailable));
       const id = `chatcmpl_${randomUUID().replace(/-/g, "")}`;
       const created = Math.floor(Date.now() / 1000);
+      const sessionKey =
+        config.sessionAffinityTtlMs === 0 ? undefined : conversationSessionKey(openAIRequest);
+      const generateOptions: CommandCodeGenerateOptions = sessionKey ? { sessionKey } : {};
       request.raw.on("aborted", () => abortController.abort());
       reply.raw.on("close", () => {
         if (!reply.raw.writableEnded) abortController.abort();
@@ -716,6 +728,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
           resolvedModel,
           signal: abortController.signal,
           config,
+          generateOptions,
         });
         if (handled) return reply;
         providerAccessById = new Map(
@@ -727,6 +740,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
       const commandCodeBody = buildCommandCodeGenerateBody({
         request: openAIRequest,
         upstreamModel: resolvedModel.upstreamModel,
+        ...(sessionKey ? { threadId: conversationThreadId(sessionKey) } : {}),
       });
 
       if (openAIRequest.stream) {
@@ -736,7 +750,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
             id,
             created,
             model: resolvedModel.publicModel,
-            events: upstream.generate(commandCodeBody, abortController.signal),
+            events: upstream.generate(commandCodeBody, abortController.signal, generateOptions),
             includeReasoning: config.includeReasoning,
             emptyVisibleResponsePolicy: config.emptyVisibleResponsePolicy,
             includeUsage: openAIRequest.stream_options?.include_usage ?? false,
@@ -750,6 +764,7 @@ export async function createApp(options: CreateAppOptions = {}): Promise<Fastify
         upstream,
         body: commandCodeBody,
         signal: abortController.signal,
+        generateOptions,
         id,
         created,
         model: resolvedModel.publicModel,

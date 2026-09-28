@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCommandCodeGenerateBody,
+  conversationSessionKey,
+  conversationThreadId,
   convertOpenAITools,
   flattenOpenAIContent,
 } from "../src/converter.js";
@@ -570,5 +572,54 @@ describe("OpenAI to CommandCode conversion", () => {
       role: "assistant",
       content: [{ type: "text", text: "Now." }],
     });
+  });
+});
+
+describe("conversation identity", () => {
+  const system = { role: "system" as const, content: "You are terse." };
+  const firstUser = { role: "user" as const, content: "Plan the migration." };
+
+  it("keys a conversation by its system text and first user message", () => {
+    const turn1 = conversationSessionKey({ model: "m", messages: [system, firstUser] });
+    const turn2 = conversationSessionKey({
+      model: "m",
+      messages: [
+        system,
+        firstUser,
+        { role: "assistant", content: "Step one." },
+        { role: "user", content: "Continue." },
+      ],
+    });
+    const other = conversationSessionKey({
+      model: "m",
+      messages: [system, { role: "user", content: "Something else." }],
+    });
+
+    expect(turn1).toMatch(/^[0-9a-f]{64}$/);
+    expect(turn2).toBe(turn1);
+    expect(other).not.toBe(turn1);
+  });
+
+  it("returns no key when there is no text to identify the conversation", () => {
+    expect(conversationSessionKey({ model: "m", messages: [] })).toBeUndefined();
+    expect(
+      conversationSessionKey({ model: "m", messages: [{ role: "assistant", content: "hi" }] }),
+    ).toBeUndefined();
+  });
+
+  it("derives a stable CLI-shaped UUID thread id from the conversation key", () => {
+    const key = conversationSessionKey({ model: "m", messages: [system, firstUser] })!;
+    const thread = conversationThreadId(key);
+
+    expect(thread).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(conversationThreadId(key)).toBe(thread);
+    expect(conversationThreadId(`${key}x`)).not.toBe(thread);
+
+    const body = buildCommandCodeGenerateBody({
+      request: { model: "m", messages: [system, firstUser] },
+      upstreamModel: "m",
+      threadId: thread,
+    });
+    expect(body.threadId).toBe(thread);
   });
 });

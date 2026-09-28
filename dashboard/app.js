@@ -86,6 +86,7 @@
       colBurn: "일일 소진",
       colQuota: "5시간 / 주간 한도",
       colInFlight: "처리 중",
+      colSessions: "대화",
       colLast: "마지막 선택",
       stReady: "사용 가능",
       stOff: "수동 꺼짐",
@@ -233,6 +234,7 @@
       colBurn: "Daily burn",
       colQuota: "5h / weekly limit",
       colInFlight: "In flight",
+      colSessions: "Sessions",
       colLast: "Last selected",
       stReady: "ready",
       stOff: "turned off",
@@ -383,6 +385,7 @@
       colBurn: "每日消耗",
       colQuota: "5 小时 / 每周限额",
       colInFlight: "处理中",
+      colSessions: "会话",
       colLast: "最近选择",
       stReady: "可用",
       stOff: "已手动关闭",
@@ -669,6 +672,7 @@
       status,
       expired,
       inFlight: Number(metrics.inFlight) || 0,
+      sessions: Number(metrics.activeSessions) || 0,
       lastSelectedAt: Number(metrics.lastSelectedAt),
     };
   }
@@ -1003,6 +1007,7 @@
           }</td>
           <td>${quotaMeter(v.windows)}</td>
           <td class="right num">${v.inFlight}</td>
+          <td class="right num">${v.sessions}</td>
           <td class="muted">${esc(relativeTime(v.lastSelectedAt))}</td>
         </tr>`;
       })
@@ -1016,9 +1021,8 @@
         <th scope="col" class="right">${esc(
           t("colBurn"),
         )}</th><th scope="col">${esc(t("colQuota"))}</th>
-        <th scope="col" class="right">${esc(
-          t("colInFlight"),
-        )}</th><th scope="col">${esc(t("colLast"))}</th>
+        <th scope="col" class="right">${esc(t("colInFlight"))}</th>
+        <th scope="col" class="right">${esc(t("colSessions"))}</th><th scope="col">${esc(t("colLast"))}</th>
       </tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
@@ -1727,7 +1731,7 @@
   function demoHealth() {
     return {
       status: "ok",
-      version: "1.66.0.b",
+      version: "1.66.0.c",
       upstream: "commandcode-alpha-generate",
       endpoint: "127.0.0.1:9992",
       default_model: "deepseek/deepseek-v4-pro",
@@ -1747,6 +1751,7 @@
       metrics: {
         id,
         inFlight: 0,
+        activeSessions: 0,
         lastSelectedAt: now - Math.round(Math.random() * 600_000),
         disabledUntil: null,
         billing: {
@@ -1849,7 +1854,7 @@
         }),
       ],
       bridge: {
-        version: "1.66.0.b",
+        version: "1.66.0.c",
         upstream_mode: "auto",
         endpoint: "127.0.0.1:9992",
       },
@@ -1865,6 +1870,7 @@
       c.metrics.inFlight = active
         ? Math.max(0, Math.round(1.6 + 1.6 * Math.sin(phase + i * 1.7)))
         : 0;
+      c.metrics.activeSessions = active ? 2 + ((i * 3) % 5) : 0;
       if (i === 1) {
         c.metrics.disabledUntil = Math.sin(phase) > 0.6 ? Date.now() + 30_000 : null;
       }

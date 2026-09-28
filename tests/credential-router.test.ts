@@ -540,6 +540,157 @@ describe("CommandCode credential routing", () => {
     });
   });
 
+  describe("session affinity", () => {
+    function router(
+      options: { now?: () => number; sessionTtlMs?: number; sessionCapacity?: number } = {},
+    ) {
+      return new CommandCodeCredentialRouter({
+        credentials: [credential("alpha"), credential("beta"), credential("gamma")],
+        policy: "round_robin",
+        billingRefreshMs: 60_000,
+        cooldownMs: 60_000,
+        now: options.now ?? (() => now),
+        ...(options.sessionTtlMs !== undefined ? { sessionTtlMs: options.sessionTtlMs } : {}),
+        ...(options.sessionCapacity !== undefined
+          ? { sessionCapacity: options.sessionCapacity }
+          : {}),
+      });
+    }
+    const model = "deepseek/deepseek-v4-pro";
+
+    it("keeps one conversation on the key that served its first turn", async () => {
+      // Given a round-robin pool and one conversation key.
+      const pool = router();
+
+      // When the same conversation sends several turns, releasing each one.
+      const picks: string[] = [];
+      for (let turn = 0; turn < 4; turn += 1) {
+        const selected = await pool.select({ model, sessionKey: "conversation-a" });
+        picks.push(selected.id);
+        pool.recordSuccess(selected.id);
+      }
+
+      // Then every turn lands on the first key.
+      expect(new Set(picks).size).toBe(1);
+    });
+
+    it("still spreads different conversations by the configured policy", async () => {
+      const pool = router();
+      const first = await pool.select({ model, sessionKey: "conversation-a" });
+      const second = await pool.select({ model, sessionKey: "conversation-b" });
+      expect(second.id).not.toBe(first.id);
+    });
+
+    it("moves a conversation when its pinned key is excluded after a failure", async () => {
+      // Given a conversation pinned to one key.
+      const pool = router();
+      const pinned = await pool.select({ model, sessionKey: "conversation-a" });
+      pool.recordFailure(pinned.id, { statusCode: 500 });
+
+      // When the retry excludes the failed key.
+      const moved = await pool.select({
+        model,
+        sessionKey: "conversation-a",
+        excludeIds: [pinned.id],
+      });
+      pool.recordSuccess(moved.id);
+
+      // Then the conversation follows the new key on its next turn.
+      expect(moved.id).not.toBe(pinned.id);
+      const next = await pool.select({ model, sessionKey: "conversation-a" });
+      expect(next.id).toBe(moved.id);
+    });
+
+    it("does not pin to a key that reached its in-flight limit", async () => {
+      const pool = new CommandCodeCredentialRouter({
+        credentials: [
+          { ...credential("alpha"), maxInFlight: 1 },
+          { ...credential("beta"), maxInFlight: 1 },
+        ],
+        policy: "round_robin",
+        billingRefreshMs: 60_000,
+        cooldownMs: 60_000,
+        now: () => now,
+      });
+      const busy = await pool.select({ model, sessionKey: "conversation-a" });
+      const overflow = await pool.select({ model, sessionKey: "conversation-a" });
+      expect(overflow.id).not.toBe(busy.id);
+    });
+
+    it("forgets a pin after the affinity TTL", async () => {
+      let clock = now;
+      const pool = router({ now: () => clock, sessionTtlMs: 1_000 });
+      const first = await pool.select({ model, sessionKey: "conversation-a" });
+      pool.recordSuccess(first.id);
+      await pool.select({ model, sessionKey: "other" }).then((c) => pool.recordSuccess(c.id));
+
+      clock += 1_001;
+      const after = await pool.select({ model, sessionKey: "conversation-a" });
+      expect(after.id).not.toBe(first.id);
+    });
+
+    it("evicts the least recently used pin at capacity", async () => {
+      // Given two pins at capacity.
+      const pool = router({ sessionCapacity: 2 });
+      pool.recordSuccess((await pool.select({ model, sessionKey: "a" })).id);
+      const b = await pool.select({ model, sessionKey: "b" });
+      pool.recordSuccess(b.id);
+
+      // When "b" is served again and a third conversation arrives.
+      pool.recordSuccess((await pool.select({ model, sessionKey: "b" })).id);
+      pool.recordSuccess((await pool.select({ model, sessionKey: "c" })).id);
+
+      // Then the least recently served pin ("a") is the one evicted.
+      expect(pool.sessionCount).toBe(2);
+      expect(pool.pinnedCredentialId("a")).toBeUndefined();
+      expect(pool.pinnedCredentialId("b")).toBe(b.id);
+      expect(pool.pinnedCredentialId("c")).toBeDefined();
+    });
+
+    it("lets an urgent-expiry key win over a pinned non-urgent key", async () => {
+      const pool = new CommandCodeCredentialRouter({
+        credentials: [credential("steady"), credential("urgent")],
+        policy: "round_robin",
+        billingRefreshMs: 60_000,
+        cooldownMs: 60_000,
+        validateBillingBeforeSelect: true,
+        now: () => now,
+        billingProvider: async (selected) =>
+          selected.id === "urgent"
+            ? state("urgent", 1, 1).billing!
+            : state("steady", 100, 20).billing!,
+      });
+      await expect(pool.select({ model, sessionKey: "conversation-a" })).resolves.toMatchObject({
+        id: "urgent",
+      });
+    });
+
+    it("reports live pinned conversations per key in diagnostics", async () => {
+      let clock = now;
+      const pool = router({ now: () => clock, sessionTtlMs: 1_000 });
+      const a = await pool.select({ model, sessionKey: "a" });
+      pool.recordSuccess(a.id);
+      const b = await pool.select({ model, sessionKey: "b" });
+      pool.recordSuccess(b.id);
+
+      const counts = Object.fromEntries(pool.diagnostics().map((d) => [d.id, d.activeSessions]));
+      expect(counts[a.id]).toBe(1);
+      expect(counts[b.id]).toBe(1);
+
+      clock += 1_001;
+      expect(pool.diagnostics().every((d) => d.activeSessions === 0)).toBe(true);
+    });
+
+    it("ignores affinity when no session key is given", async () => {
+      const pool = router();
+      const first = await pool.select({ model });
+      pool.recordSuccess(first.id);
+      const second = await pool.select({ model });
+      expect(second.id).not.toBe(first.id);
+      expect(pool.sessionCount).toBe(0);
+    });
+  });
+
   it("rejects duplicate credential IDs because health accounting is keyed by ID", () => {
     expect(
       () =>

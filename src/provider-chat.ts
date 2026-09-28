@@ -11,7 +11,11 @@ import {
   CommandCodeProviderSseTransform,
   type CommandCodeProviderClient,
 } from "./provider.js";
-import type { BridgeConfig, OpenAIChatCompletionRequest } from "./types.js";
+import type {
+  BridgeConfig,
+  CommandCodeGenerateOptions,
+  OpenAIChatCompletionRequest,
+} from "./types.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -25,8 +29,10 @@ export async function handleProviderChat(options: {
   resolvedModel: ResolvedModel;
   signal: AbortSignal;
   config: BridgeConfig;
+  generateOptions?: CommandCodeGenerateOptions;
 }): Promise<boolean | null> {
   const { reply, httpRequest, request, providerClient, resolvedModel, signal, config } = options;
+  const generateOptions = options.generateOptions ?? {};
   const body = buildProviderChatRequestBody(request, resolvedModel.upstreamModel);
   const retries = request.stream ? 0 : Math.max(0, config.emptyVisibleRetryMaxAttempts);
   const maxTokens = requestedMaxTokens(request);
@@ -36,7 +42,7 @@ export async function handleProviderChat(options: {
       if (attempt > 0 && config.emptyVisibleRetryBackoffMs > 0) {
         await retryBackoff(attempt, config.emptyVisibleRetryBackoffMs);
       }
-      response = await providerClient.chat(body, signal);
+      response = await providerClient.chat(body, signal, generateOptions);
       if (request.stream || !response.ok) break;
       const completion = (await response.clone().json()) as Record<string, unknown>;
       if (typeof completion.model === "string") completion.model = resolvedModel.publicModel;

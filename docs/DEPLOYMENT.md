@@ -425,12 +425,13 @@ Credential file shape:
 
 ### Multi-key routing options
 
-| Variable                             | Default           | Description                                                                                           |
-| ------------------------------------ | ----------------- | ----------------------------------------------------------------------------------------------------- |
-| `COMMANDCODE_ROUTING_POLICY`         | `depletion_aware` | `depletion_aware` routes by billing/expiry pressure; `round_robin` rotates eligible keys by weight.   |
-| `COMMANDCODE_BILLING_REFRESH_MS`     | `300000`          | Billing/usage cache TTL per credential.                                                               |
-| `COMMANDCODE_BILLING_TIMEOUT_MS`     | `10000`           | Timeout for billing probes. On probe failure, routing falls back safely rather than hanging requests. |
-| `COMMANDCODE_CREDENTIAL_COOLDOWN_MS` | `60000`           | Cooldown after 429/5xx/timeouts. 402 uses at least this and the billing refresh window.               |
+| Variable                              | Default           | Description                                                                                                                    |
+| ------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `COMMANDCODE_ROUTING_POLICY`          | `depletion_aware` | `depletion_aware` routes by billing/expiry pressure; `round_robin` rotates eligible keys by weight.                            |
+| `COMMANDCODE_BILLING_REFRESH_MS`      | `300000`          | Billing/usage cache TTL per credential.                                                                                        |
+| `COMMANDCODE_BILLING_TIMEOUT_MS`      | `10000`           | Timeout for billing probes. On probe failure, routing falls back safely rather than hanging requests.                          |
+| `COMMANDCODE_CREDENTIAL_COOLDOWN_MS`  | `60000`           | Cooldown after 429/5xx/timeouts. 402 uses at least this and the billing refresh window.                                        |
+| `COMMANDCODE_SESSION_AFFINITY_TTL_MS` | `7200000`         | How long one conversation stays on the key that last served it; `0` disables affinity and sends a fresh thread id per request. |
 
 Routing behavior:
 

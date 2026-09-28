@@ -219,6 +219,10 @@ export function loadBridgeConfig(options: LoadBridgeConfigOptions = {}): BridgeC
     commandCodeBillingRefreshMs,
     commandCodeBillingTimeoutMs: parseNumber(env.COMMANDCODE_BILLING_TIMEOUT_MS, 10_000),
     commandCodeCredentialCooldownMs,
+    sessionAffinityTtlMs: parseNonNegativeNumber(
+      env.COMMANDCODE_SESSION_AFFINITY_TTL_MS,
+      2 * 60 * 60 * 1000,
+    ),
     commandCodeRetryMaxAttempts: parseNumber(env.COMMANDCODE_RETRY_MAX_ATTEMPTS, 5),
     commandCodeRetryBackoffMs: parseNumber(env.COMMANDCODE_RETRY_BACKOFF_MS, 250),
     requestBodyLimitBytes: parseNumber(env.REQUEST_BODY_LIMIT_BYTES, 1_048_576),

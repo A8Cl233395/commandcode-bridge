@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.b-b57920?style=flat-square" alt="Version 1.66.0.b"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.c-b57920?style=flat-square" alt="Version 1.66.0.c"></a>
   <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-82-1f6f78?style=flat-square" alt="82 models"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-20%2B-9f4d2e?style=flat-square" alt="Node.js 20+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-28231f?style=flat-square" alt="MIT License"></a>
@@ -20,7 +20,7 @@
 
 <!-- README-I18N:END -->
 
-CommandCode Bridge is a trusted-environment HTTP gateway for a CommandCode account. It presents standard OpenAI-compatible model and chat endpoints, routes work across eligible upstream credentials, and publishes an exact **82-model** catalog aligned with CommandCode **1.66.0**. The bridge version always tracks the current CommandCode CLI version with a letter suffix (for example **1.66.0.b**); the suffix marks bridge-only releases.
+CommandCode Bridge is a trusted-environment HTTP gateway for a CommandCode account. It presents standard OpenAI-compatible model and chat endpoints, routes work across eligible upstream credentials, and publishes an exact **82-model** catalog aligned with CommandCode **1.66.0**. The bridge version always tracks the current CommandCode CLI version with a letter suffix (for example **1.66.0.c**); the suffix marks bridge-only releases.
 
 [What it does](#what-it-does) · [Install](#install) · [Usage](#usage) · [How it works](#how-it-works) · [Repository layout](#repository-layout) · [Current limitations](#current-limitations) · [License](#license)
 
@@ -242,7 +242,7 @@ The previous single-file dashboard (`src/dashboard.ts`) was retired in 1.66.0.b.
 
 ### Credential routing
 
-`daily_burn_priority` is the default and weights required daily burn (`depletion_aware` is its legacy alias); `balance_priority` prefers usable balance; `round_robin` rotates smoothly by weight; `drain_first` drains the eligible key with the least remaining time, then moves to the next. Every policy first narrows to eligible credentials expiring within 1 day. Manual disablement, `allowedModels`, in-flight caps, exhausted/expired balance, auth failure, and 429/5xx/timeout cooldown can exclude a key. Each request stays on one key; failover occurs only before visible output.
+`daily_burn_priority` is the default and weights required daily burn (`depletion_aware` is its legacy alias); `balance_priority` prefers usable balance; `round_robin` rotates smoothly by weight; `drain_first` drains the eligible key with the least remaining time, then moves to the next. Every policy first narrows to eligible credentials expiring within 1 day. Manual disablement, `allowedModels`, in-flight caps, exhausted/expired balance, auth failure, and 429/5xx/timeout cooldown can exclude a key. Each request stays on one key; failover occurs only before visible output. **Session affinity** keeps the turns of one conversation (same system text and first user message) on the key that served it, so the upstream prompt cache stays warm, and sends one stable CLI-shaped `threadId`/`x-session-id` per conversation. A pin is only a preference: health, capacity, urgent expiry, and exclusion still apply first, and a failed key hands the conversation to the next choice. Pins expire after `COMMANDCODE_SESSION_AFFINITY_TTL_MS` (2 hours; `0` disables), and the dashboard shows live sessions per key.
 
 ### Configuration and operations
 

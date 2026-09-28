@@ -424,12 +424,13 @@ Credential JSON 파일 예시:
 
 ### Multi-key routing 옵션
 
-| 변수                                 | 기본값            | 설명                                                                                                                          |
-| ------------------------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `COMMANDCODE_ROUTING_POLICY`         | `depletion_aware` | `depletion_aware`는 billing/expiry pressure 기준으로 라우팅합니다. `round_robin`은 eligible key를 weight 기준으로 순환합니다. |
-| `COMMANDCODE_BILLING_REFRESH_MS`     | `300000`          | credential별 billing/usage cache TTL입니다.                                                                                   |
-| `COMMANDCODE_BILLING_TIMEOUT_MS`     | `10000`           | billing probe timeout입니다. probe 실패 시 요청이 멈추지 않도록 안전하게 fallback합니다.                                      |
-| `COMMANDCODE_CREDENTIAL_COOLDOWN_MS` | `60000`           | 429/5xx/timeout 이후 cooldown입니다. 402는 최소 이 값과 billing refresh window 중 큰 값을 사용합니다.                         |
+| 변수                                  | 기본값            | 설명                                                                                                                          |
+| ------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `COMMANDCODE_ROUTING_POLICY`          | `depletion_aware` | `depletion_aware`는 billing/expiry pressure 기준으로 라우팅합니다. `round_robin`은 eligible key를 weight 기준으로 순환합니다. |
+| `COMMANDCODE_BILLING_REFRESH_MS`      | `300000`          | credential별 billing/usage cache TTL입니다.                                                                                   |
+| `COMMANDCODE_BILLING_TIMEOUT_MS`      | `10000`           | billing probe timeout입니다. probe 실패 시 요청이 멈추지 않도록 안전하게 fallback합니다.                                      |
+| `COMMANDCODE_CREDENTIAL_COOLDOWN_MS`  | `60000`           | 429/5xx/timeout 이후 cooldown입니다. 402는 최소 이 값과 billing refresh window 중 큰 값을 사용합니다.                         |
+| `COMMANDCODE_SESSION_AFFINITY_TTL_MS` | `7200000`         | 한 대화가 마지막으로 처리한 key에 머무는 시간입니다. `0`이면 affinity를 끄고 요청마다 새 thread id를 보냅니다.                |
 
 라우팅 동작 요약:
 

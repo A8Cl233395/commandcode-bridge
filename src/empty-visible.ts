@@ -6,6 +6,7 @@ import {
 } from "./openai.js";
 import type {
   CommandCodeGenerateBody,
+  CommandCodeGenerateOptions,
   CommandCodeUpstream,
   OpenAIChatCompletion,
 } from "./types.js";
@@ -45,6 +46,7 @@ export async function collectOpenAICompletionWithEmptyVisibleRetry(options: {
   upstream: CommandCodeUpstream;
   body: CommandCodeGenerateBody;
   signal: AbortSignal;
+  generateOptions?: CommandCodeGenerateOptions;
   id: string;
   created: number;
   model: string;
@@ -68,7 +70,11 @@ export async function collectOpenAICompletionWithEmptyVisibleRetry(options: {
         id: options.id,
         created: options.created,
         model: options.model,
-        events: options.upstream.generate(options.body, options.signal),
+        events: options.upstream.generate(
+          options.body,
+          options.signal,
+          options.generateOptions ?? {},
+        ),
         includeReasoning: options.includeReasoning,
         emptyVisibleResponsePolicy: options.emptyVisibleResponsePolicy,
         log: options.log,

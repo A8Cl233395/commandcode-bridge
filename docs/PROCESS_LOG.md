@@ -144,6 +144,15 @@
 - Regression-first verification observed 10 expected failures before implementation (version, catalog, context, dashboard, and six retired-id cases). Focused config/dashboard/Alpha/Provider/server tests then passed: 122 tests in five files. Full `npm test` passed once: 222 tests in 15 files. LSP diagnostics on all five changed TypeScript files, `npm run typecheck`, `npm run lint`, and `npm run build` passed.
 - Built-artifact HTTP QA used isolated HOME/config/auth, a local unused port, Alpha mode, and a non-routable upstream. The listening log event signaled readiness without polling. `/health` returned `1.49.0.a`, `/v1/models` returned all 68 canonical models (192 entries with aliases) with matching context fields, and an empty chat request returned structured `400 invalid_request`. Both QA processes were stopped. `node dist/index.js --help` still starts the HTTP server rather than printing help; this existing behavior was observed and its process stopped.
 
+## 2026-09-28 (1.66.0.c)
+
+- Released bridge-only version `1.66.0.c` on CommandCode CLI `1.66.0`, importing two routing ideas from kiro-lb (design only; no kiro-lb code, which is AGPL-3.0).
+- Session affinity: the credential router remembers which key served a conversation, keyed by a SHA-256 of the system text plus the first user message, and prefers that key on later turns so the upstream prompt cache stays warm. The pin is a preference only: health, capacity, urgent-expiry, and exclusion filters run first, and failover re-pins the conversation to the next choice. Pins expire after `COMMANDCODE_SESSION_AFFINITY_TTL_MS` (default 2 hours, `0` disables) and are capped at 10,000 with least-recently-served eviction. Applies to the Alpha and Provider paths.
+- Stable conversation identity: the CLI keeps one random v4 UUID as `threadId`/`x-session-id` for a whole conversation, while the bridge sent a new one per request. The bridge now derives a v4-shaped UUID from the conversation key so every turn shares it. The conversation key itself stays bridge-local and is never sent upstream; the Alpha body keeps exactly the CLI key set.
+- Diagnostics and the dashboard credential table report live pinned conversations per key (`activeSessions`).
+- Not imported: Rust rewrite, off-request-path billing refresh (it would weaken the pre-selection expiry filter), client setup commands, prompt reduction, and binary releases.
+- Verification: `npm run verify` passed with 280 tests in 16 files. A built bridge with three keys against a mock upstream sent three turns of one conversation on one key with one `x-session-id`, moved a second conversation to another key, and reported `activeSessions` 1/1/0.
+
 ## 2026-09-27 (1.66.0.b)
 
 - Released bridge-only version `1.66.0.b` on CommandCode CLI `1.66.0`: the dashboard was rebuilt with the kiro-lb operations-console layout in the yelixir.dev palette and typography.
@@ -193,10 +202,10 @@
 - An independent read-only differential audit of both npm bundles found the Alpha caching work of 1.50.0 to be additive rather than breaking: `params.system` may now be a structured block list with `cache_control`, `promptCache` is an optional top-level field, and one-hour cache-write counts arrive as extra provider metadata. The bridge keeps sending a string system prompt with no `promptCache`, its parsers ignore unknown metadata, and existing `cacheReadTokens`/`cacheWriteTokens` mapping stays correct, so no protocol code changed. Adopting cache blocks or org spend-cap surfacing would be separate feature work. `/alpha/generate` transport, `buildCommandAuthHeaders`, `toWireMessages`/`toWireTools`, the 64,000 default output limit, and the NDJSON stream reader are unchanged.
 - Regression-first verification observed 6 expected catalog/version failures before implementation, then 30 passing focused config tests. The full suite passed once with 226 tests in 15 files, alongside `npm run typecheck`, `npm run lint`, Prettier checks on the changed parser-supported files, `npm run build`, `npm pack --dry-run`, and `git diff --check`.
 
-## Current status — 2026-09-27
+## Current status — 2026-09-28
 
 - Branch: `main`, synchronized with `origin/main` when this status audit began.
-- Package: `commandcode-bridge` `1.66.0.b`, Node.js `>=20`, with `commandcode-bridge` and `commandcode-router` executables.
+- Package: `commandcode-bridge` `1.66.0.c`, Node.js `>=20`, with `commandcode-bridge` and `commandcode-router` executables.
 - API surface: authenticated OpenAI-compatible `/v1/models` and `/v1/chat/completions`, health endpoint, and the static `/dashboard/` operations console over same-origin admin configuration.
 - Model surface: 82 statically aligned models (CommandCode CLI 1.66.0) with live Provider API refresh when available.
 - Routing surface: `daily_burn_priority`, `balance_priority`, `round_robin`, and `drain_first`, with per-key model scope, concurrency, cooldown, failover, and retry controls.

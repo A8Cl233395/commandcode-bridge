@@ -10,6 +10,7 @@ import type {
   CommandCodeCredential,
   CommandCodeEvent,
   CommandCodeGenerateBody,
+  CommandCodeGenerateOptions,
   CommandCodeUpstream,
   CommandCodeUsageWindow,
   CommandCodeWindowLimits,
@@ -338,6 +339,9 @@ export function createCommandCodeCredentialRouter(
     billingProvider: (credential: CommandCodeCredential, signal: AbortSignal) =>
       billingClient.getSnapshot(credential, signal),
     validateBillingBeforeSelect: true,
+    ...(config.sessionAffinityTtlMs !== undefined
+      ? { sessionTtlMs: config.sessionAffinityTtlMs }
+      : {}),
   });
 }
 
@@ -360,6 +364,7 @@ export class CommandCodeClient implements CommandCodeUpstream {
   public async *generate(
     body: CommandCodeGenerateBody,
     signal?: AbortSignal,
+    options: CommandCodeGenerateOptions = {},
   ): AsyncIterable<CommandCodeEvent> {
     if (this.router.credentialCount === 0) throw new CommandCodeAuthError();
 
@@ -376,6 +381,7 @@ export class CommandCodeClient implements CommandCodeUpstream {
         const selectOptions: SelectCredentialOptions = {
           model: body.params.model,
           ignoreCooldown: attempt > 0,
+          ...(options.sessionKey ? { sessionKey: options.sessionKey } : {}),
         };
         if (fatalIds.size + retryableFailed.size > 0) {
           selectOptions.excludeIds = new Set([...fatalIds, ...retryableFailed]);
@@ -387,6 +393,7 @@ export class CommandCodeClient implements CommandCodeUpstream {
           credential = await this.router.select({
             model: body.params.model,
             ignoreCooldown: true,
+            ...(options.sessionKey ? { sessionKey: options.sessionKey } : {}),
           });
         } else {
           if (lastError instanceof Error) throw lastError;

@@ -6,14 +6,21 @@ import type { CommandCodeCredentialDiagnostic } from "../src/credential-router.j
 import type {
   CommandCodeEvent,
   CommandCodeGenerateBody,
+  CommandCodeGenerateOptions,
   CommandCodeUpstream,
 } from "../src/types.js";
 
 class FakeCommandCodeClient implements CommandCodeUpstream {
   public seenBodies: CommandCodeGenerateBody[] = [];
+  public seenOptions: Array<CommandCodeGenerateOptions | undefined> = [];
 
-  async *generate(body: CommandCodeGenerateBody): AsyncIterable<CommandCodeEvent> {
+  async *generate(
+    body: CommandCodeGenerateBody,
+    _signal?: AbortSignal,
+    options?: CommandCodeGenerateOptions,
+  ): AsyncIterable<CommandCodeEvent> {
     this.seenBodies.push(body);
+    this.seenOptions.push(options);
     yield { type: "text-delta", text: "FAKE_OK" };
     yield {
       type: "finish",
@@ -40,6 +47,7 @@ class FakeDiagnosticsCommandCodeClient extends FakeCommandCodeClient {
         disabledUntilIso: null,
         disabledForMs: 0,
         inFlight: 0,
+        activeSessions: 0,
         lastSelectedAt: null,
         lastSelectedAtIso: null,
         currentWeight: 0,
@@ -159,6 +167,60 @@ describe("Fastify OpenAI-compatible server", () => {
     expect(response.body).not.toContain("user_secret");
     expect(response.json().auth.bridge_api_key_configured).toBe(true);
     expect(response.json().auth.bridge_api_key_source).toBe("none");
+    await app.close();
+  });
+
+  it("gives every turn of one conversation the same thread id and affinity key", async () => {
+    // Given a bridge and two conversations, the first one continued for a second turn.
+    const upstream = new FakeCommandCodeClient();
+    const app = await createTestApp({ upstream });
+    const system = { role: "system", content: "You are terse." };
+    const turn1 = [system, { role: "user", content: "Plan the migration." }];
+    const turn2 = [
+      ...turn1,
+      { role: "assistant", content: "Step one." },
+      { role: "user", content: "Continue." },
+    ];
+    const other = [system, { role: "user", content: "Unrelated question." }];
+
+    // When each is sent as a chat completion.
+    for (const messages of [turn1, turn2, other]) {
+      const response = await app.inject({
+        method: "POST",
+        url: "/v1/chat/completions",
+        payload: { model: "default", messages },
+      });
+      expect(response.statusCode).toBe(200);
+    }
+
+    // Then both turns share a v4-shaped thread id and key, and the other conversation differs.
+    const [first, second, third] = upstream.seenBodies;
+    expect(first?.threadId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    expect(second?.threadId).toBe(first?.threadId);
+    expect(third?.threadId).not.toBe(first?.threadId);
+    const [o1, o2, o3] = upstream.seenOptions;
+    expect(o1?.sessionKey).toBeDefined();
+    expect(o2?.sessionKey).toBe(o1?.sessionKey);
+    expect(o3?.sessionKey).not.toBe(o1?.sessionKey);
+    expect(JSON.stringify(first)).not.toContain(o1?.sessionKey ?? "missing");
+    await app.close();
+  });
+
+  it("uses a fresh random thread id per request when session affinity is disabled", async () => {
+    const upstream = new FakeCommandCodeClient();
+    const app = await createTestApp({ upstream, configOverrides: { sessionAffinityTtlMs: 0 } });
+    const messages = [{ role: "user", content: "same" }];
+    for (let turn = 0; turn < 2; turn += 1) {
+      await app.inject({
+        method: "POST",
+        url: "/v1/chat/completions",
+        payload: { model: "default", messages },
+      });
+    }
+    expect(upstream.seenBodies[0]?.threadId).not.toBe(upstream.seenBodies[1]?.threadId);
+    expect(upstream.seenOptions[0]?.sessionKey).toBeUndefined();
     await app.close();
   });
 

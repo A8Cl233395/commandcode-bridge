@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { cwd as processCwd } from "node:process";
 import { messagesForModel } from "./model-images.js";
 
@@ -224,6 +224,43 @@ function responseFormatInstruction(
     return "Respond only with a valid JSON object. Do not wrap it in markdown or include explanatory text.";
   }
   return undefined;
+}
+
+/**
+ * Identifies one conversation across turns: its system text plus the first user message stay
+ * constant while later turns append. Returns undefined when there is nothing to key on.
+ */
+export function conversationSessionKey(request: OpenAIChatCompletionRequest): string | undefined {
+  const system: string[] = [];
+  let firstUser: string | undefined;
+  for (const message of request.messages) {
+    if (message.role === "system" || message.role === "developer") {
+      system.push(flattenOpenAIContent(message.content));
+    } else if (message.role === "user") {
+      firstUser = flattenOpenAIContent(message.content);
+      break;
+    }
+  }
+  if (firstUser === undefined || (firstUser === "" && system.every((text) => text === ""))) {
+    return undefined;
+  }
+  return createHash("sha256")
+    .update(system.join("\n\n"))
+    .update("\0")
+    .update(firstUser)
+    .digest("hex");
+}
+
+/**
+ * The CLI sends one random v4 UUID per conversation as `threadId` and `x-session-id`; derive a
+ * v4-shaped UUID from the conversation key so every turn of one conversation shares it.
+ */
+export function conversationThreadId(sessionKey: string): string {
+  const bytes = createHash("sha256").update(`commandcode-bridge:thread:${sessionKey}`).digest();
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+  const hex = bytes.subarray(0, 16).toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
 function buildSystemPrompt(request: OpenAIChatCompletionRequest): string {

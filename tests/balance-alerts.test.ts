@@ -34,6 +34,7 @@ function diagnostic(overrides: {
     disabledUntilIso: null,
     disabledForMs: 0,
     inFlight: 0,
+    activeSessions: 0,
     lastSelectedAt: null,
     lastSelectedAtIso: null,
     currentWeight: 0,

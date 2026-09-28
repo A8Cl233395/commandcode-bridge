@@ -162,8 +162,17 @@ export type CommandCodeEvent =
     }
   | { type: string; [key: string]: unknown };
 
+export interface CommandCodeGenerateOptions {
+  /** Bridge-local conversation key for key affinity; never sent upstream. */
+  sessionKey?: string;
+}
+
 export interface CommandCodeUpstream {
-  generate(body: CommandCodeGenerateBody, signal?: AbortSignal): AsyncIterable<CommandCodeEvent>;
+  generate(
+    body: CommandCodeGenerateBody,
+    signal?: AbortSignal,
+    options?: CommandCodeGenerateOptions,
+  ): AsyncIterable<CommandCodeEvent>;
 }
 
 export interface CommandCodeCredential {
@@ -295,6 +304,8 @@ export interface BridgeConfig {
   commandCodeBillingRefreshMs: number;
   commandCodeBillingTimeoutMs: number;
   commandCodeCredentialCooldownMs: number;
+  /** Conversation-to-key pin lifetime; 0 disables session affinity. */
+  sessionAffinityTtlMs?: number;
   commandCodeRetryMaxAttempts: number;
   commandCodeRetryBackoffMs: number;
   requestBodyLimitBytes: number;
