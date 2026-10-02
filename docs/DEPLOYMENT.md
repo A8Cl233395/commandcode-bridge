@@ -425,19 +425,19 @@ Credential file shape:
 
 ### Multi-key routing options
 
-| Variable                              | Default           | Description                                                                                                                    |
-| ------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `COMMANDCODE_ROUTING_POLICY`          | `depletion_aware` | `depletion_aware` routes by billing/expiry pressure; `round_robin` rotates eligible keys by weight.                            |
-| `COMMANDCODE_BILLING_REFRESH_MS`      | `300000`          | Billing/usage cache TTL per credential.                                                                                        |
-| `COMMANDCODE_BILLING_TIMEOUT_MS`      | `10000`           | Timeout for billing probes. On probe failure, routing falls back safely rather than hanging requests.                          |
-| `COMMANDCODE_CREDENTIAL_COOLDOWN_MS`  | `60000`           | Cooldown after 429/5xx/timeouts. 402 uses at least this and the billing refresh window.                                        |
-| `COMMANDCODE_SESSION_AFFINITY_TTL_MS` | `7200000`         | How long one conversation stays on the key that last served it; `0` disables affinity and sends a fresh thread id per request. |
+| Variable                              | Default           | Description                                                                                                                      |
+| ------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `COMMANDCODE_ROUTING_POLICY`          | `depletion_aware` | `depletion_aware` routes by billing/expiry pressure; `round_robin` rotates eligible keys by weight.                              |
+| `COMMANDCODE_BILLING_REFRESH_MS`      | `300000`          | Billing/usage cache TTL per credential.                                                                                          |
+| `COMMANDCODE_BILLING_TIMEOUT_MS`      | `10000`           | Timeout for billing probes. On probe failure, routing falls back safely rather than hanging requests.                            |
+| `COMMANDCODE_CREDENTIAL_COOLDOWN_MS`  | `60000`           | Minimum cooldown after 402; the larger of this and the billing refresh window applies. 429/5xx/timeouts are retried, not cooled. |
+| `COMMANDCODE_SESSION_AFFINITY_TTL_MS` | `7200000`         | How long one conversation stays on the key that last served it; `0` disables affinity and sends a fresh thread id per request.   |
 
 Routing behavior:
 
 - `depletion_aware` prefers keys whose expiring/monthly credits need to be consumed before reset.
 - Every policy first prioritizes credentials with a positive monthly/free `expiringBalance` and no more than one day remaining. Purchased-only credits remain reserve capacity and never enter this urgent pool.
-- depleted or failing keys are cooled down and skipped when alternatives exist.
+- depleted keys (402) are cooled down and keys with auth failures (401) are disabled; both are skipped when alternatives exist. Provider-scoped errors (429/5xx/timeouts) are retried within the request without cooling the key down.
 - application-level stream errors before visible output can fail over to another eligible credential.
 - once visible output has been sent, the bridge surfaces the error rather than retrying and duplicating output.
 

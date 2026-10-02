@@ -1731,7 +1731,7 @@
   function demoHealth() {
     return {
       status: "ok",
-      version: "1.66.0.c",
+      version: "1.66.0.d",
       upstream: "commandcode-alpha-generate",
       endpoint: "127.0.0.1:9992",
       default_model: "deepseek/deepseek-v4-pro",
@@ -1854,7 +1854,7 @@
         }),
       ],
       bridge: {
-        version: "1.66.0.c",
+        version: "1.66.0.d",
         upstream_mode: "auto",
         endpoint: "127.0.0.1:9992",
       },

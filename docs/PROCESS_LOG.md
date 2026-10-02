@@ -144,6 +144,16 @@
 - Regression-first verification observed 10 expected failures before implementation (version, catalog, context, dashboard, and six retired-id cases). Focused config/dashboard/Alpha/Provider/server tests then passed: 122 tests in five files. Full `npm test` passed once: 222 tests in 15 files. LSP diagnostics on all five changed TypeScript files, `npm run typecheck`, `npm run lint`, and `npm run build` passed.
 - Built-artifact HTTP QA used isolated HOME/config/auth, a local unused port, Alpha mode, and a non-routable upstream. The listening log event signaled readiness without polling. `/health` returned `1.49.0.a`, `/v1/models` returned all 68 canonical models (192 entries with aliases) with matching context fields, and an empty chat request returned structured `400 invalid_request`. Both QA processes were stopped. `node dist/index.js --help` still starts the HTTP server rather than printing help; this existing behavior was observed and its process stopped.
 
+## 2026-10-02 (1.66.0.d)
+
+- Released bridge-only version `1.66.0.d` on CommandCode CLI `1.66.0` with PR #6 from WhatAHappyPig (`A8Cl233395`, commit `48f0bbb`, merge `ec97dcd`).
+- Incident: every terminal upstream failure used to call `recordFailure`, including at-capacity errors that arrive as statusless stream `error` events and transient failures that were retried and then succeeded. On a single-key deployment that benched the only key for `COMMANDCODE_CREDENTIAL_COOLDOWN_MS` (60 s), and every request in that window failed in about 1 ms with `NoAvailableCommandCodeCredentialError`.
+- Both the Alpha (`/alpha/generate`) and Provider (`/provider/v1/chat/completions`) paths now record a failure only for credential-scoped statuses (401/402/403). HTTP 429/5xx, empty bodies, stream `error` events, network errors, and caller aborts release the in-flight slot without a cooldown. Retries within a request and the per-request exclusion of already-tried keys are unchanged.
+- When every credential is cooling down at attempt zero, selection retries with `ignoreCooldown`, so a cooled key still serves; auth-disabled and billing-disabled keys stay excluded.
+- `COMMANDCODE_CREDENTIAL_COOLDOWN_MS` now only sets the minimum 402 cooldown. The router still maps 429/5xx/statusless failures to a cooldown when `recordFailure` is called with them, but neither request path does so any more. With several keys, a key-specific 429 no longer steers later requests away for 60 s; only the failing request fails over.
+- Updated the README routing paragraph (English, Korean, Chinese), `docs/KNOW_HOW.md`, `docs/ARCHITECTURE.md`, and both deployment guides, which still described 429/5xx/timeout cooldowns.
+- Verification: PR CI passed on Node 20/22/24; `npm run verify` on merged `main` passed with 284 tests in 16 files.
+
 ## 2026-09-28 (1.66.0.c)
 
 - Released bridge-only version `1.66.0.c` on CommandCode CLI `1.66.0`, importing two routing ideas from kiro-lb (design only; no kiro-lb code, which is AGPL-3.0).
@@ -205,7 +215,7 @@
 ## Current status — 2026-09-28
 
 - Branch: `main`, synchronized with `origin/main` when this status audit began.
-- Package: `commandcode-bridge` `1.66.0.c`, Node.js `>=20`, with `commandcode-bridge` and `commandcode-router` executables.
+- Package: `commandcode-bridge` `1.66.0.d`, Node.js `>=20`, with `commandcode-bridge` and `commandcode-router` executables.
 - API surface: authenticated OpenAI-compatible `/v1/models` and `/v1/chat/completions`, health endpoint, and the static `/dashboard/` operations console over same-origin admin configuration.
 - Model surface: 82 statically aligned models (CommandCode CLI 1.66.0) with live Provider API refresh when available.
 - Routing surface: `daily_burn_priority`, `balance_priority`, `round_robin`, and `drain_first`, with per-key model scope, concurrency, cooldown, failover, and retry controls.

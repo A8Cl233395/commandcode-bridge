@@ -80,7 +80,8 @@ Credential health rules:
 - 401: disable the credential for the process lifetime.
 - 402: cooldown at least the billing refresh interval, then re-probe later.
 - confirmed zero remaining credits: do not select the credential until a later billing refresh proves capacity has returned.
-- 429/5xx/timeout/opaque retryable errors: cooldown for `COMMANDCODE_CREDENTIAL_COOLDOWN_MS`.
+- 403: exclude the credential for the rest of the request; no cooldown.
+- 429/5xx/timeout/empty-body/opaque retryable errors: retry within the request, but never cool the credential down. These are provider-scoped (they hit every key at once), so a cooldown would bench the whole pool, and with a single key it failed every request until the window expired.
 - Application-level stream errors before visible output can fail over to another credential. After visible output, the error is forwarded to the client instead of retrying and duplicating content. A single client request also excludes credentials it already attempted, so a high-weight failing key cannot be retried in the same request.
 
 ## Security Rule
