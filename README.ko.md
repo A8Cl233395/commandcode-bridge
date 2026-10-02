@@ -8,8 +8,8 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.d-b57920?style=flat-square" alt="Version 1.66.0.d"></a>
-  <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-82-1f6f78?style=flat-square" alt="82 models"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/version-1.74.0.a-b57920?style=flat-square" alt="Version 1.74.0.a"></a>
+  <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-85-1f6f78?style=flat-square" alt="85 models"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-20%2B-9f4d2e?style=flat-square" alt="Node.js 20+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-28231f?style=flat-square" alt="MIT License"></a>
 </p>
@@ -20,7 +20,7 @@
 
 <!-- README-I18N:END -->
 
-CommandCode Bridge는 CommandCode 계정을 위한 신뢰 환경용 HTTP 게이트웨이입니다. 표준 OpenAI-compatible 모델·채팅 endpoint를 제공하고 eligible upstream credential 사이에서 요청을 라우팅하며, CommandCode **1.66.0**에 맞춘 정확한 **82-model** catalog를 게시합니다. Bridge 버전은 항상 현재 CommandCode CLI 버전을 따라가며 그 뒤에 문자 접미사를 붙입니다(예: **1.66.0.c**). 접미사는 bridge 전용 release를 뜻합니다.
+CommandCode Bridge는 CommandCode 계정을 위한 신뢰 환경용 HTTP 게이트웨이입니다. 표준 OpenAI-compatible 모델·채팅 endpoint를 제공하고 eligible upstream credential 사이에서 요청을 라우팅하며, CommandCode **1.74.0**에 맞춘 정확한 **85-model** catalog를 게시합니다. Bridge 버전은 항상 현재 CommandCode CLI 버전을 따라가며 그 뒤에 문자 접미사를 붙입니다(예: **1.74.0.a**). 접미사는 bridge 전용 release를 뜻합니다.
 
 [기능](#기능) · [설치](#설치) · [사용법](#사용법) · [동작 방식](#동작-방식) · [저장소 구성](#저장소-구성) · [현재 제한](#현재-제한) · [라이선스](#라이선스)
 
@@ -48,7 +48,7 @@ CommandCode Bridge는 CommandCode 계정을 위한 신뢰 환경용 HTTP 게이�
 
 ### Linux rootless installer
 
-installer는 Linux user systemd용이며 CommandCode CLI 1.66.0 때문에 Node.js 22+를 요구합니다. 가능한 경우 CLI auth를 가져오고 private state는 `~/.config/commandcode-bridge`, 설치본은 `~/.local/share/commandcode-bridge`에 두며 안전한 기본값은 `127.0.0.1:9992`입니다. `0.0.0.0`은 `BRIDGE_API_KEY`를 켠 신뢰 LAN/VPN/tailnet/firewall/reverse proxy 뒤에서만 사용하십시오. 로그인 전 시작에는 `sudo loginctl enable-linger "$USER"`, 제거에는 `./uninstall.sh` 또는 `./uninstall.sh --purge-config`를 사용합니다.
+installer는 Linux user systemd용이며 CommandCode CLI 1.74.0 때문에 Node.js 22+를 요구합니다. 가능한 경우 CLI auth를 가져오고 private state는 `~/.config/commandcode-bridge`, 설치본은 `~/.local/share/commandcode-bridge`에 두며 안전한 기본값은 `127.0.0.1:9992`입니다. `0.0.0.0`은 `BRIDGE_API_KEY`를 켠 신뢰 LAN/VPN/tailnet/firewall/reverse proxy 뒤에서만 사용하십시오. 로그인 전 시작에는 `sudo loginctl enable-linger "$USER"`, 제거에는 `./uninstall.sh` 또는 `./uninstall.sh --purge-config`를 사용합니다.
 
 ```bash
 ./install.sh
@@ -125,7 +125,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 
 ### Model metadata와 정확한 catalog
 
-각 model object는 `id`, `object`, `created`, provider 기반 `owned_by`를 포함합니다. 알려진 context는 `context_window`, `context_length`, `max_context_length`에 동일하게 나옵니다. Provider API를 쓸 수 있을 때는 시작 시 live `GET /provider/v1/models`로 catalog를 갱신해 새로 추가된 model도 반영합니다. 아래 표는 배포되는 1.66.0 baseline이며 “기본 활성화”는 built-in enabled state입니다.
+각 model object는 `id`, `object`, `created`, provider 기반 `owned_by`를 포함합니다. 알려진 context는 `context_window`, `context_length`, `max_context_length`에 동일하게 나옵니다. Provider API를 쓸 수 있을 때는 시작 시 live `GET /provider/v1/models`로 catalog를 갱신해 새로 추가된 model도 반영합니다. 아래 표는 배포되는 1.74.0 baseline이며 “기본 활성화”는 built-in enabled state입니다.
 
 | Provider          | Canonical model ID                      |   Context | 기본 활성화 |
 | ----------------- | --------------------------------------- | --------: | :---------: |
@@ -134,6 +134,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | DeepSeek          | `deepseek/deepseek-v4-flash-vision-exp` | 1,000,000 |   아니요    |
 | DeepSeek          | `deepseek/deepseek-v4-flash-fast`       | 1,000,000 |   아니요    |
 | DeepSeek          | `deepseek/deepseek-v4.1-flash`          | 1,000,000 |   아니요    |
+| DeepSeek          | `deepseek/deepseek-v4.1-flash-fast`     | 1,000,000 |   아니요    |
 | Moonshot          | `moonshotai/Kimi-K3`                    | 1,000,000 |   아니요    |
 | Moonshot          | `moonshotai/Kimi-K2.7-Code`             |   256,000 |   아니요    |
 | Moonshot          | `moonshotai/Kimi-K2.7-Code-Highspeed`   |   262,000 |   아니요    |
@@ -175,8 +176,9 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | Thinking Machines | `thinkingmachines/inkling-small`        | 1,000,000 |   아니요    |
 | Poolside          | `poolside/laguna-s-2.1-free`            |   256,000 |   아니요    |
 | InclusionAI       | `inclusionai/ling-3.0-flash-sante:free` |   262,144 |   아니요    |
+| InclusionAI       | `inclusionai/ling-3.1-flash:free`       |   262,144 |   아니요    |
 | Stealth           | `stealth/space-bunny-alpha`             | 1,000,000 |   아니요    |
-| Stealth           | `stealth/pixel-canary`                  |   262,144 |   아니요    |
+| Anthropic         | `claude-sonnet-5-5`                     | 1,000,000 |   아니요    |
 | Anthropic         | `claude-sonnet-5`                       | 1,000,000 |   아니요    |
 | Anthropic         | `claude-sonnet-4-6`                     | 1,000,000 |   아니요    |
 | Anthropic         | `claude-fable-5-1`                      | 1,000,000 |   아니요    |
@@ -187,6 +189,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | Anthropic         | `claude-opus-4-7`                       | 1,000,000 |   아니요    |
 | Anthropic         | `claude-haiku-4-5-20251001`             |   200,000 |   아니요    |
 | OpenAI            | `gpt-6-astra`                           | 1,050,000 |   아니요    |
+| OpenAI            | `gpt-6.1-sol`                           | 1,050,000 |   아니요    |
 | OpenAI            | `gpt-6-sol`                             | 1,050,000 |   아니요    |
 | OpenAI            | `gpt-6-luna`                            | 1,050,000 |   아니요    |
 | OpenAI            | `gpt-5.6-sol`                           | 1,050,000 |   아니요    |
@@ -248,15 +251,15 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 
 **Reasoning 출력 변경:** `INCLUDE_REASONING=true`이면 reasoning을 `content`에 붙이지 않고 스트리밍은 `delta.reasoning_content`, 비스트리밍은 `message.reasoning_content`로 따로 반환합니다. Reasoning을 표시하는 클라이언트는 이 필드를 읽어야 합니다. Provider 비스트리밍 재시도에서는 옵션이 켜졌을 때만 reasoning을 보이는 출력으로 세므로, 숨겨진 reasoning만 있는 빈 응답의 성공 처리와 노출된 reasoning의 불필요한 재시도를 방지합니다.
 
-Alpha와 Provider 모두 CLI 1.66.0의 텍스트 전용 모델 목록과 별칭에 대해 이미지 입력을 제거합니다. 가장 최근 이미지 메시지에는 번호가 붙은 텍스트 마커를 넣고 과거 이미지는 생략합니다. 비전 모델의 이미지는 유지하며, 알 수 없는 모델이나 custom 모델은 CLI와 같이 이미지 입력을 허용하지만 실제 비전 지원을 보장하지는 않습니다. Alpha는 base64 data URI를 `mimeType`이 있는 네이티브 이미지 파트로 보내고, 원격 URL은 내려받지 않고 텍스트 자리표시자로 유지합니다.
+Alpha와 Provider 모두 CLI 1.74.0의 텍스트 전용 모델 목록과 별칭에 대해 이미지 입력을 제거합니다. 가장 최근 이미지 메시지에는 번호가 붙은 텍스트 마커를 넣고 과거 이미지는 생략합니다. 비전 모델의 이미지는 유지하며, 알 수 없는 모델이나 custom 모델은 CLI와 같이 이미지 입력을 허용하지만 실제 비전 지원을 보장하지는 않습니다. Alpha는 base64 data URI를 `mimeType`이 있는 네이티브 이미지 파트로 보내고, 원격 URL은 내려받지 않고 텍스트 자리표시자로 유지합니다.
 
-저장된 dashboard catalog에서 업그레이드하면 현재 model의 enabled state와 모든 custom model은 보존하고, built-in metadata는 1.66.0 canonical 정의로 갱신합니다. Ox Alpha와 MiniMax M3/M2.7 Free를 포함한 retired built-in은 unknown upstream model로 전달하지 않으며, 제거된 default가 설정돼 있으면 `deepseek/deepseek-v4-pro`로 안전하게 fallback합니다.
+저장된 dashboard catalog에서 업그레이드하면 현재 model의 enabled state와 모든 custom model은 보존하고, built-in metadata는 1.74.0 canonical 정의로 갱신합니다. Ox Alpha와 MiniMax M3/M2.7 Free를 포함한 retired built-in은 unknown upstream model로 전달하지 않으며, 제거된 default가 설정돼 있으면 `deepseek/deepseek-v4-pro`로 안전하게 fallback합니다.
 
 Dashboard의 관리자 쓰기는 이 브라우저에 저장된 클라이언트 API key를 씁니다. 새 브라우저에서는 저장·재시작 전에 **설정 → 클라이언트 API key**에 현재 key를 붙여넣고 **이 key 사용**을 누르십시오. key 없는 runtime은 실제 loopback 연결이며 Host도 loopback인 경우에만 bootstrap할 수 있습니다.
 
 Dashboard의 재시작 버튼은 process가 supervise되는 환경에서만 저장한 설정을 적용합니다. systemd는 자동으로 감지하고, restart 정책을 둔 Docker를 포함한 그 밖의 supervisor는 `COMMANDCODE_BRIDGE_RESTART_MODE=exit`가 필요하며 제공되는 두 Compose 파일에 모두 설정돼 있습니다. 설정이 없으면 bridge는 종료를 거부하고 `POST /admin/restart`는 `restart_requested: false`를 반환하며, 저장한 설정은 service를 직접 재시작할 때까지 적용 대기 상태로 남습니다.
 
-Credential 우선순위는 `COMMANDCODE_CREDENTIALS_FILE`, `COMMANDCODE_CREDENTIALS`/`COMMANDCODE_API_KEYS`, `COMMAND_CODE_API_KEY`/`COMMANDCODE_API_KEY`/`CMD_API_KEY`, CLI auth file 순입니다. 핵심 기본값은 `HOST=127.0.0.1`, `PORT=9992`, `COMMANDCODE_UPSTREAM_MODE=auto`, `COMMANDCODE_ROUTING_POLICY=daily_burn_priority`, `COMMANDCODE_MAX_IN_FLIGHT_PER_CREDENTIAL=4`, `COMMANDCODE_CLI_VERSION=1.66.0`, `COMMANDCODE_TIMEOUT_MS=600000`, `COMMANDCODE_RETRY_MAX_ATTEMPTS=5`, `COMMANDCODE_RETRY_BACKOFF_MS=250`, `COMMANDCODE_EMPTY_VISIBLE_RESPONSE_POLICY=error_on_length`입니다. 일시적 upstream 실패(429, 5xx, timeout)는 `COMMANDCODE_RETRY_MAX_ATTEMPTS`까지 지수 백오프로 재시도합니다. 401/402/403으로 실패한 키는 해당 요청에서 제외되고 다른 키를 우선하며, visible output이 나온 뒤에는 재시도하지 않습니다. `BRIDGE_API_KEY`는 설정 시 `/v1/*`를 보호하며 client는 Bearer 또는 `x-api-key`를 쓸 수 있습니다. `COMMANDCODE_UPSTREAM_MODE=auto`는 시작 시 Provider API를 프로브해 요금제가 허용하면(Provider $15/월 이상) 공식 API를 쓰고, `provider`는 공식 API를 강제하며, `alpha`는 모든 model을 legacy `/alpha/generate`로 강제합니다. `COMMANDCODE_ZDR=true`면 Provider API 요청에 `x-cmd-zdr: 1`(zero data retention)을 보냅니다. Credential JSON은 `chmod 600`으로 보호하십시오. Balance alert는 기본 off입니다. 선택적 `commandcode-router`는 여러 bridge host의 least-in-flight routing용입니다.
+Credential 우선순위는 `COMMANDCODE_CREDENTIALS_FILE`, `COMMANDCODE_CREDENTIALS`/`COMMANDCODE_API_KEYS`, `COMMAND_CODE_API_KEY`/`COMMANDCODE_API_KEY`/`CMD_API_KEY`, CLI auth file 순입니다. 핵심 기본값은 `HOST=127.0.0.1`, `PORT=9992`, `COMMANDCODE_UPSTREAM_MODE=auto`, `COMMANDCODE_ROUTING_POLICY=daily_burn_priority`, `COMMANDCODE_MAX_IN_FLIGHT_PER_CREDENTIAL=4`, `COMMANDCODE_CLI_VERSION=1.74.0`, `COMMANDCODE_TIMEOUT_MS=600000`, `COMMANDCODE_RETRY_MAX_ATTEMPTS=5`, `COMMANDCODE_RETRY_BACKOFF_MS=250`, `COMMANDCODE_EMPTY_VISIBLE_RESPONSE_POLICY=error_on_length`입니다. 일시적 upstream 실패(429, 5xx, timeout)는 `COMMANDCODE_RETRY_MAX_ATTEMPTS`까지 지수 백오프로 재시도합니다. 401/402/403으로 실패한 키는 해당 요청에서 제외되고 다른 키를 우선하며, visible output이 나온 뒤에는 재시도하지 않습니다. `BRIDGE_API_KEY`는 설정 시 `/v1/*`를 보호하며 client는 Bearer 또는 `x-api-key`를 쓸 수 있습니다. `COMMANDCODE_UPSTREAM_MODE=auto`는 시작 시 Provider API를 프로브해 요금제가 허용하면(Provider $15/월 이상) 공식 API를 쓰고, `provider`는 공식 API를 강제하며, `alpha`는 모든 model을 legacy `/alpha/generate`로 강제합니다. `COMMANDCODE_ZDR=true`면 Provider API 요청에 `x-cmd-zdr: 1`(zero data retention)을 보냅니다. Credential JSON은 `chmod 600`으로 보호하십시오. Balance alert는 기본 off입니다. 선택적 `commandcode-router`는 여러 bridge host의 least-in-flight routing용입니다.
 
 ## 동작 방식
 

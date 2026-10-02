@@ -15,6 +15,7 @@ describe("model image input limits", () => {
     "deepseek-v4-pro",
     "alibaba/qwen3.7-max",
     "meituan/LongCat-2.0",
+    "inclusionai/ling-3.1-flash:free",
   ])("omits image data for the CLI text-only model %s", (model) => {
     const request: OpenAIChatCompletionRequest = {
       model,
@@ -35,6 +36,7 @@ describe("model image input limits", () => {
     "deepseek/deepseek-v4.1-flash",
     "deepseek/deepseek-v4-flash-vision-exp",
     "xiaomi/mimo-v2.6-flash",
+    "deepseek/deepseek-v4.1-flash-fast",
     "custom/model",
   ])("preserves images for CLI vision-capable or unknown model %s", (model) => {
     const request: OpenAIChatCompletionRequest = {

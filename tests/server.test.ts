@@ -602,6 +602,23 @@ describe("Fastify OpenAI-compatible server", () => {
     await app.close();
   });
 
+  it("forwards reasoning_effort off to the Alpha body as the CLI does for DeepSeek", async () => {
+    const fake = new FakeCommandCodeClient();
+    const app = await createTestApp({ upstream: fake });
+    const response = await app.inject({
+      method: "POST",
+      url: "/v1/chat/completions",
+      payload: {
+        model: "default",
+        messages: [{ role: "user", content: "hi" }],
+        reasoning_effort: "off",
+      },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(fake.seenBodies[0]?.params.reasoning_effort).toBe("off");
+    await app.close();
+  });
+
   it("rejects malformed assistant tool_calls with an OpenAI-style validation error", async () => {
     const app = await createTestApp({ upstream: new FakeCommandCodeClient() });
     const response = await app.inject({

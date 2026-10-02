@@ -140,6 +140,7 @@ export const LEGACY_RETIRED_MODEL_IDS: ReadonlySet<string> = new Set([
   "anthropic/claude-sonnet-4-20250514",
   "inclusionai/ling-3.0-flash-free",
   "meituan/LongCat-2.0:free",
+  "stealth/pixel-canary",
 ]);
 
 export function isLegacyRetiredModelId(id: string): boolean {
@@ -194,6 +195,15 @@ export const COMMANDCODE_MODEL_DEFINITIONS: CommandCodeModelDefinition[] = [
     contextWindow: 1_000_000,
     enabledByDefault: false,
     notes: "$0.15/M in · $0.6/M out",
+  },
+  {
+    id: "deepseek/deepseek-v4.1-flash-fast",
+    label: "DeepSeek V4.1 Flash Fast",
+    provider: "DeepSeek",
+    family: "deepseek",
+    contextWindow: 1_000_000,
+    enabledByDefault: false,
+    notes: "$0.16/M in · $0.58/M out",
   },
   {
     id: "moonshotai/Kimi-K3",
@@ -594,6 +604,15 @@ export const COMMANDCODE_MODEL_DEFINITIONS: CommandCodeModelDefinition[] = [
     notes: "$0/M in · $0/M out",
   },
   {
+    id: "inclusionai/ling-3.1-flash:free",
+    label: "Ling 3.1 Flash",
+    provider: "InclusionAI",
+    family: "ling",
+    contextWindow: 262_144,
+    enabledByDefault: false,
+    notes: "$0/M in · $0/M out",
+  },
+  {
     id: "stealth/space-bunny-alpha",
     label: "Space Bunny Alpha",
     provider: "Stealth",
@@ -603,13 +622,13 @@ export const COMMANDCODE_MODEL_DEFINITIONS: CommandCodeModelDefinition[] = [
     notes: "$0/M in · $0/M out",
   },
   {
-    id: "stealth/pixel-canary",
-    label: "Pixel Canary",
-    provider: "Stealth",
-    family: "stealth",
-    contextWindow: 262_144,
+    id: "claude-sonnet-5-5",
+    label: "Claude Sonnet 5.5",
+    provider: "Anthropic",
+    family: "claude",
+    contextWindow: 1_000_000,
     enabledByDefault: false,
-    notes: "$0/M in · $0/M out",
+    notes: "$2/M in · $10/M out",
   },
   {
     id: "claude-sonnet-5",
@@ -716,6 +735,15 @@ export const COMMANDCODE_MODEL_DEFINITIONS: CommandCodeModelDefinition[] = [
     contextWindow: 1_050_000,
     enabledByDefault: false,
     notes: "$10/M in · $50/M out",
+  },
+  {
+    id: "gpt-6.1-sol",
+    label: "GPT-6.1 Sol",
+    provider: "OpenAI",
+    family: "gpt",
+    contextWindow: 1_050_000,
+    enabledByDefault: false,
+    notes: "$2/M in · $10/M out",
   },
   {
     id: "gpt-6-sol",
@@ -947,7 +975,7 @@ export const COMMANDCODE_MODEL_DEFINITIONS: CommandCodeModelDefinition[] = [
     family: "grok",
     contextWindow: 500_000,
     enabledByDefault: false,
-    notes: "$1.2/M in · $3.6/M out",
+    notes: "$2/M in · $6/M out",
   },
 ];
 

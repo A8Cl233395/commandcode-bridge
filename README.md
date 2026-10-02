@@ -8,8 +8,8 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.d-b57920?style=flat-square" alt="Version 1.66.0.d"></a>
-  <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-82-1f6f78?style=flat-square" alt="82 models"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/version-1.74.0.a-b57920?style=flat-square" alt="Version 1.74.0.a"></a>
+  <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-85-1f6f78?style=flat-square" alt="85 models"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-20%2B-9f4d2e?style=flat-square" alt="Node.js 20+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-28231f?style=flat-square" alt="MIT License"></a>
 </p>
@@ -20,7 +20,7 @@
 
 <!-- README-I18N:END -->
 
-CommandCode Bridge is a trusted-environment HTTP gateway for a CommandCode account. It presents standard OpenAI-compatible model and chat endpoints, routes work across eligible upstream credentials, and publishes an exact **82-model** catalog aligned with CommandCode **1.66.0**. The bridge version always tracks the current CommandCode CLI version with a letter suffix (for example **1.66.0.c**); the suffix marks bridge-only releases.
+CommandCode Bridge is a trusted-environment HTTP gateway for a CommandCode account. It presents standard OpenAI-compatible model and chat endpoints, routes work across eligible upstream credentials, and publishes an exact **85-model** catalog aligned with CommandCode **1.74.0**. The bridge version always tracks the current CommandCode CLI version with a letter suffix (for example **1.74.0.a**); the suffix marks bridge-only releases.
 
 [What it does](#what-it-does) · [Install](#install) · [Usage](#usage) · [How it works](#how-it-works) · [Repository layout](#repository-layout) · [Current limitations](#current-limitations) · [License](#license)
 
@@ -48,7 +48,7 @@ CommandCode Bridge is a trusted-environment HTTP gateway for a CommandCode accou
 
 ### Linux rootless installer
 
-The installer targets Linux user systemd, requires Node.js 22+ for CommandCode CLI 1.66.0, imports CLI auth when available, writes private state under `~/.config/commandcode-bridge`, installs under `~/.local/share/commandcode-bridge`, and safely defaults to `127.0.0.1:9992`. Use `0.0.0.0` only behind a trusted LAN/VPN/tailnet/firewall/reverse proxy with `BRIDGE_API_KEY`. Use `sudo loginctl enable-linger "$USER"` for pre-login startup; uninstall with `./uninstall.sh` or `./uninstall.sh --purge-config`.
+The installer targets Linux user systemd, requires Node.js 22+ for CommandCode CLI 1.74.0, imports CLI auth when available, writes private state under `~/.config/commandcode-bridge`, installs under `~/.local/share/commandcode-bridge`, and safely defaults to `127.0.0.1:9992`. Use `0.0.0.0` only behind a trusted LAN/VPN/tailnet/firewall/reverse proxy with `BRIDGE_API_KEY`. Use `sudo loginctl enable-linger "$USER"` for pre-login startup; uninstall with `./uninstall.sh` or `./uninstall.sh --purge-config`.
 
 ```bash
 ./install.sh
@@ -125,7 +125,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 
 ### Model metadata and exact catalog
 
-Each model object includes `id`, `object`, `created`, and provider-derived `owned_by`. Known context is repeated in `context_window`, `context_length`, and `max_context_length`. When the Provider API is available the catalog is refreshed from the live `GET /provider/v1/models` at startup and picks up newly added models; the static table below is the shipped 1.66.0 baseline. “Default” is the built-in enabled state.
+Each model object includes `id`, `object`, `created`, and provider-derived `owned_by`. Known context is repeated in `context_window`, `context_length`, and `max_context_length`. When the Provider API is available the catalog is refreshed from the live `GET /provider/v1/models` at startup and picks up newly added models; the static table below is the shipped 1.74.0 baseline. “Default” is the built-in enabled state.
 
 | Provider          | Canonical model ID                      |   Context | Default |
 | ----------------- | --------------------------------------- | --------: | :-----: |
@@ -134,6 +134,7 @@ Each model object includes `id`, `object`, `created`, and provider-derived `owne
 | DeepSeek          | `deepseek/deepseek-v4-flash-vision-exp` | 1,000,000 |   No    |
 | DeepSeek          | `deepseek/deepseek-v4-flash-fast`       | 1,000,000 |   No    |
 | DeepSeek          | `deepseek/deepseek-v4.1-flash`          | 1,000,000 |   No    |
+| DeepSeek          | `deepseek/deepseek-v4.1-flash-fast`     | 1,000,000 |   No    |
 | Moonshot          | `moonshotai/Kimi-K3`                    | 1,000,000 |   No    |
 | Moonshot          | `moonshotai/Kimi-K2.7-Code`             |   256,000 |   No    |
 | Moonshot          | `moonshotai/Kimi-K2.7-Code-Highspeed`   |   262,000 |   No    |
@@ -175,8 +176,9 @@ Each model object includes `id`, `object`, `created`, and provider-derived `owne
 | Thinking Machines | `thinkingmachines/inkling-small`        | 1,000,000 |   No    |
 | Poolside          | `poolside/laguna-s-2.1-free`            |   256,000 |   No    |
 | InclusionAI       | `inclusionai/ling-3.0-flash-sante:free` |   262,144 |   No    |
+| InclusionAI       | `inclusionai/ling-3.1-flash:free`       |   262,144 |   No    |
 | Stealth           | `stealth/space-bunny-alpha`             | 1,000,000 |   No    |
-| Stealth           | `stealth/pixel-canary`                  |   262,144 |   No    |
+| Anthropic         | `claude-sonnet-5-5`                     | 1,000,000 |   No    |
 | Anthropic         | `claude-sonnet-5`                       | 1,000,000 |   No    |
 | Anthropic         | `claude-sonnet-4-6`                     | 1,000,000 |   No    |
 | Anthropic         | `claude-fable-5-1`                      | 1,000,000 |   No    |
@@ -187,6 +189,7 @@ Each model object includes `id`, `object`, `created`, and provider-derived `owne
 | Anthropic         | `claude-opus-4-7`                       | 1,000,000 |   No    |
 | Anthropic         | `claude-haiku-4-5-20251001`             |   200,000 |   No    |
 | OpenAI            | `gpt-6-astra`                           | 1,050,000 |   No    |
+| OpenAI            | `gpt-6.1-sol`                           | 1,050,000 |   No    |
 | OpenAI            | `gpt-6-sol`                             | 1,050,000 |   No    |
 | OpenAI            | `gpt-6-luna`                            | 1,050,000 |   No    |
 | OpenAI            | `gpt-5.6-sol`                           | 1,050,000 |   No    |
@@ -248,15 +251,15 @@ The previous single-file dashboard (`src/dashboard.ts`) was retired in 1.66.0.b.
 
 **Reasoning output change:** with `INCLUDE_REASONING=true`, reasoning is returned separately as `delta.reasoning_content` (streaming) or `message.reasoning_content` (non-streaming), not appended to `content`. Clients that display reasoning must read that field. Non-streaming Provider retries count reasoning as visible only when enabled, avoiding both blank success with hidden reasoning and unnecessary retries for exposed reasoning.
 
-Image inputs are removed for the CLI 1.66.0 text-only model list in both Alpha and Provider modes, including aliases. The newest image-bearing message gets numbered text markers; historical images are omitted. Vision models retain images, while unknown/custom models follow the CLI's image-capable fallback, not a guarantee of actual vision support. Alpha sends base64 data URIs as native image parts with `mimeType`; remote URLs remain text placeholders and are not downloaded.
+Image inputs are removed for the CLI 1.74.0 text-only model list in both Alpha and Provider modes, including aliases. The newest image-bearing message gets numbered text markers; historical images are omitted. Vision models retain images, while unknown/custom models follow the CLI's image-capable fallback, not a guarantee of actual vision support. Alpha sends base64 data URIs as native image parts with `mimeType`; remote URLs remain text placeholders and are not downloaded.
 
-Upgrades from a persisted dashboard catalog preserve each current model's enabled state and all custom models, while refreshing built-in metadata from the 1.66.0 canonical definitions. Retired built-ins, including Ox Alpha and the MiniMax M3/M2.7 Free models, are removed rather than forwarded as unknown upstream models; a retired configured default falls back to `deepseek/deepseek-v4-pro`.
+Upgrades from a persisted dashboard catalog preserve each current model's enabled state and all custom models, while refreshing built-in metadata from the 1.74.0 canonical definitions. Retired built-ins, including Ox Alpha and the MiniMax M3/M2.7 Free models, are removed rather than forwarded as unknown upstream models; a retired configured default falls back to `deepseek/deepseek-v4-pro`.
 
 Admin writes from the dashboard use the client API key stored in this browser. On a fresh browser, paste the current key into **Settings → Client API key** and choose **Use this key** before saving or restarting. A runtime with no key can bootstrap only from a real loopback connection whose Host is also loopback.
 
 The dashboard restart button applies a saved configuration only where the process is supervised. systemd is detected automatically; every other supervisor, including Docker with a restart policy, needs `COMMANDCODE_BRIDGE_RESTART_MODE=exit`, which both shipped Compose files set. Without it the bridge refuses to exit, `POST /admin/restart` reports `restart_requested: false`, and the saved configuration stays pending until the service is restarted by hand.
 
-Credential precedence is `COMMANDCODE_CREDENTIALS_FILE`, `COMMANDCODE_CREDENTIALS`/`COMMANDCODE_API_KEYS`, then `COMMAND_CODE_API_KEY`/`COMMANDCODE_API_KEY`/`CMD_API_KEY`, then CLI auth files. Core defaults are `HOST=127.0.0.1`, `PORT=9992`, `COMMANDCODE_UPSTREAM_MODE=auto`, `COMMANDCODE_ROUTING_POLICY=daily_burn_priority`, `COMMANDCODE_MAX_IN_FLIGHT_PER_CREDENTIAL=4`, `COMMANDCODE_CLI_VERSION=1.66.0`, `COMMANDCODE_TIMEOUT_MS=600000`, `COMMANDCODE_RETRY_MAX_ATTEMPTS=5`, `COMMANDCODE_RETRY_BACKOFF_MS=250`, and `COMMANDCODE_EMPTY_VISIBLE_RESPONSE_POLICY=error_on_length`. Transient upstream failures (429, 5xx, timeouts) are retried with exponential backoff up to `COMMANDCODE_RETRY_MAX_ATTEMPTS`; a credential that fails with 401/402/403 is skipped for the rest of the request while other keys are preferred, and retries stop once any visible output has been emitted. `BRIDGE_API_KEY` protects `/v1/*` when set; clients may use Bearer or `x-api-key`. `COMMANDCODE_UPSTREAM_MODE=auto` probes the Provider API at startup and uses it whenever the plan allows (the Provider plan at $15/mo or higher); `provider` forces the official API and `alpha` forces the legacy `/alpha/generate` path for every model. Set `COMMANDCODE_ZDR=true` to send `x-cmd-zdr: 1` (zero data retention) on Provider API requests. Protect credential JSON with `chmod 600`. Optional balance alerts are off. Optional `commandcode-router` is for least-in-flight routing across multiple bridge hosts.
+Credential precedence is `COMMANDCODE_CREDENTIALS_FILE`, `COMMANDCODE_CREDENTIALS`/`COMMANDCODE_API_KEYS`, then `COMMAND_CODE_API_KEY`/`COMMANDCODE_API_KEY`/`CMD_API_KEY`, then CLI auth files. Core defaults are `HOST=127.0.0.1`, `PORT=9992`, `COMMANDCODE_UPSTREAM_MODE=auto`, `COMMANDCODE_ROUTING_POLICY=daily_burn_priority`, `COMMANDCODE_MAX_IN_FLIGHT_PER_CREDENTIAL=4`, `COMMANDCODE_CLI_VERSION=1.74.0`, `COMMANDCODE_TIMEOUT_MS=600000`, `COMMANDCODE_RETRY_MAX_ATTEMPTS=5`, `COMMANDCODE_RETRY_BACKOFF_MS=250`, and `COMMANDCODE_EMPTY_VISIBLE_RESPONSE_POLICY=error_on_length`. Transient upstream failures (429, 5xx, timeouts) are retried with exponential backoff up to `COMMANDCODE_RETRY_MAX_ATTEMPTS`; a credential that fails with 401/402/403 is skipped for the rest of the request while other keys are preferred, and retries stop once any visible output has been emitted. `BRIDGE_API_KEY` protects `/v1/*` when set; clients may use Bearer or `x-api-key`. `COMMANDCODE_UPSTREAM_MODE=auto` probes the Provider API at startup and uses it whenever the plan allows (the Provider plan at $15/mo or higher); `provider` forces the official API and `alpha` forces the legacy `/alpha/generate` path for every model. Set `COMMANDCODE_ZDR=true` to send `x-cmd-zdr: 1` (zero data retention) on Provider API requests. Protect credential JSON with `chmod 600`. Optional balance alerts are off. Optional `commandcode-router` is for least-in-flight routing across multiple bridge hosts.
 
 ## How it works
 

@@ -8,8 +8,8 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img src="https://img.shields.io/badge/version-1.66.0.d-b57920?style=flat-square" alt="Version 1.66.0.d"></a>
-  <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-82-1f6f78?style=flat-square" alt="82 models"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/version-1.74.0.a-b57920?style=flat-square" alt="Version 1.74.0.a"></a>
+  <a href="src/model-catalog.ts"><img src="https://img.shields.io/badge/models-85-1f6f78?style=flat-square" alt="85 models"></a>
   <a href="package.json"><img src="https://img.shields.io/badge/Node.js-20%2B-9f4d2e?style=flat-square" alt="Node.js 20+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-28231f?style=flat-square" alt="MIT License"></a>
 </p>
@@ -20,7 +20,7 @@
 
 <!-- README-I18N:END -->
 
-CommandCode Bridge 是面向 CommandCode 账号的可信环境 HTTP 网关。它提供标准 OpenAI-compatible 模型与聊天端点，在符合条件的上游凭据之间路由请求，并发布与 CommandCode **1.66.0** 对齐的准确 **82-model** catalog。Bridge 版本始终跟随当前 CommandCode CLI 版本并在其后附加字母后缀（例如 **1.66.0.c**）；后缀表示仅限 Bridge 的发布。
+CommandCode Bridge 是面向 CommandCode 账号的可信环境 HTTP 网关。它提供标准 OpenAI-compatible 模型与聊天端点，在符合条件的上游凭据之间路由请求，并发布与 CommandCode **1.74.0** 对齐的准确 **85-model** catalog。Bridge 版本始终跟随当前 CommandCode CLI 版本并在其后附加字母后缀（例如 **1.74.0.a**）；后缀表示仅限 Bridge 的发布。
 
 [功能](#功能) · [安装](#安装) · [用法](#用法) · [工作原理](#工作原理) · [仓库布局](#仓库布局) · [当前限制](#当前限制) · [许可证](#许可证)
 
@@ -48,7 +48,7 @@ CommandCode Bridge 是面向 CommandCode 账号的可信环境 HTTP 网关。它
 
 ### Linux rootless installer
 
-installer 面向 Linux user systemd；由于 CommandCode CLI 1.66.0，需要 Node.js 22+。它会在可用时导入 CLI auth，把 private state 写入 `~/.config/commandcode-bridge`，安装到 `~/.local/share/commandcode-bridge`，安全默认值为 `127.0.0.1:9992`。只有在启用 `BRIDGE_API_KEY` 的可信 LAN/VPN/tailnet/firewall/reverse proxy 后才使用 `0.0.0.0`。登录前启动使用 `sudo loginctl enable-linger "$USER"`；卸载使用 `./uninstall.sh` 或 `./uninstall.sh --purge-config`。
+installer 面向 Linux user systemd；由于 CommandCode CLI 1.74.0，需要 Node.js 22+。它会在可用时导入 CLI auth，把 private state 写入 `~/.config/commandcode-bridge`，安装到 `~/.local/share/commandcode-bridge`，安全默认值为 `127.0.0.1:9992`。只有在启用 `BRIDGE_API_KEY` 的可信 LAN/VPN/tailnet/firewall/reverse proxy 后才使用 `0.0.0.0`。登录前启动使用 `sudo loginctl enable-linger "$USER"`；卸载使用 `./uninstall.sh` 或 `./uninstall.sh --purge-config`。
 
 ```bash
 ./install.sh
@@ -125,7 +125,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 
 ### Model metadata 与准确 catalog
 
-每个 model object 包含 `id`、`object`、`created` 和 provider-derived `owned_by`。已知 context 同时写入 `context_window`、`context_length`、`max_context_length`。在 Provider API 可用时，启动时从 live `GET /provider/v1/models` 刷新 catalog，并纳入新添加的模型。下表是随附的 1.66.0 baseline；“默认启用”表示 built-in enabled state。
+每个 model object 包含 `id`、`object`、`created` 和 provider-derived `owned_by`。已知 context 同时写入 `context_window`、`context_length`、`max_context_length`。在 Provider API 可用时，启动时从 live `GET /provider/v1/models` 刷新 catalog，并纳入新添加的模型。下表是随附的 1.74.0 baseline；“默认启用”表示 built-in enabled state。
 
 | Provider          | Canonical model ID                      |   Context | 默认启用 |
 | ----------------- | --------------------------------------- | --------: | :------: |
@@ -134,6 +134,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | DeepSeek          | `deepseek/deepseek-v4-flash-vision-exp` | 1,000,000 |    否    |
 | DeepSeek          | `deepseek/deepseek-v4-flash-fast`       | 1,000,000 |    否    |
 | DeepSeek          | `deepseek/deepseek-v4.1-flash`          | 1,000,000 |    否    |
+| DeepSeek          | `deepseek/deepseek-v4.1-flash-fast`     | 1,000,000 |    否    |
 | Moonshot          | `moonshotai/Kimi-K3`                    | 1,000,000 |    否    |
 | Moonshot          | `moonshotai/Kimi-K2.7-Code`             |   256,000 |    否    |
 | Moonshot          | `moonshotai/Kimi-K2.7-Code-Highspeed`   |   262,000 |    否    |
@@ -175,8 +176,9 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | Thinking Machines | `thinkingmachines/inkling-small`        | 1,000,000 |    否    |
 | Poolside          | `poolside/laguna-s-2.1-free`            |   256,000 |    否    |
 | InclusionAI       | `inclusionai/ling-3.0-flash-sante:free` |   262,144 |    否    |
+| InclusionAI       | `inclusionai/ling-3.1-flash:free`       |   262,144 |    否    |
 | Stealth           | `stealth/space-bunny-alpha`             | 1,000,000 |    否    |
-| Stealth           | `stealth/pixel-canary`                  |   262,144 |    否    |
+| Anthropic         | `claude-sonnet-5-5`                     | 1,000,000 |    否    |
 | Anthropic         | `claude-sonnet-5`                       | 1,000,000 |    否    |
 | Anthropic         | `claude-sonnet-4-6`                     | 1,000,000 |    否    |
 | Anthropic         | `claude-fable-5-1`                      | 1,000,000 |    否    |
@@ -187,6 +189,7 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 | Anthropic         | `claude-opus-4-7`                       | 1,000,000 |    否    |
 | Anthropic         | `claude-haiku-4-5-20251001`             |   200,000 |    否    |
 | OpenAI            | `gpt-6-astra`                           | 1,050,000 |    否    |
+| OpenAI            | `gpt-6.1-sol`                           | 1,050,000 |    否    |
 | OpenAI            | `gpt-6-sol`                             | 1,050,000 |    否    |
 | OpenAI            | `gpt-6-luna`                            | 1,050,000 |    否    |
 | OpenAI            | `gpt-5.6-sol`                           | 1,050,000 |    否    |
@@ -248,15 +251,15 @@ curl -sS http://127.0.0.1:9992/v1/chat/completions \
 
 **Reasoning 输出变更：** 启用 `INCLUDE_REASONING=true` 时，reasoning 不再追加到 `content`，而是通过流式的 `delta.reasoning_content` 或非流式的 `message.reasoning_content` 单独返回。需要展示 reasoning 的客户端必须读取该字段。Provider 非流式重试仅在启用时将 reasoning 计为可见输出，避免隐藏 reasoning 导致空响应被当作成功，也避免对已展示的 reasoning 进行不必要的重试。
 
-Alpha 和 Provider 均根据 CLI 1.66.0 的纯文本模型列表移除图片输入，别名也适用。最新的图片消息会得到带编号的文本标记，历史图片则被省略。视觉模型保留图片；未知或自定义模型遵循 CLI 允许图片的默认行为，但这不保证实际支持视觉。Alpha 将 base64 data URI 作为带有 `mimeType` 的原生图片部分发送；远程 URL 保留为文本占位符，不会被下载。
+Alpha 和 Provider 均根据 CLI 1.74.0 的纯文本模型列表移除图片输入，别名也适用。最新的图片消息会得到带编号的文本标记，历史图片则被省略。视觉模型保留图片；未知或自定义模型遵循 CLI 允许图片的默认行为，但这不保证实际支持视觉。Alpha 将 base64 data URI 作为带有 `mimeType` 的原生图片部分发送；远程 URL 保留为文本占位符，不会被下载。
 
-从持久化的 dashboard catalog 升级时，会保留当前 model 的 enabled state 和所有 custom model，并用 1.66.0 canonical 定义刷新 built-in metadata。包括 Ox Alpha 和 MiniMax M3/M2.7 Free 在内的 retired built-in 不会作为 unknown upstream model 转发；若 default 已退役，则安全回退到 `deepseek/deepseek-v4-pro`。
+从持久化的 dashboard catalog 升级时，会保留当前 model 的 enabled state 和所有 custom model，并用 1.74.0 canonical 定义刷新 built-in metadata。包括 Ox Alpha 和 MiniMax M3/M2.7 Free 在内的 retired built-in 不会作为 unknown upstream model 转发；若 default 已退役，则安全回退到 `deepseek/deepseek-v4-pro`。
 
 Dashboard 的管理写入使用当前浏览器中保存的客户端 API key。在新浏览器中，保存或重启前请把当前 key 粘贴到 **设置 → 客户端 API key** 并点击 **使用此 key**。无 key runtime 仅在真实 loopback 连接且 Host 也是 loopback 时允许 bootstrap。
 
 Dashboard 的重启按钮只有在进程被 supervise 时才能应用已保存的配置。systemd 会被自动检测；包括配置了 restart 策略的 Docker 在内的其他 supervisor 需要 `COMMANDCODE_BRIDGE_RESTART_MODE=exit`，随附的两个 Compose 文件均已设置。未设置时 bridge 拒绝退出，`POST /admin/restart` 返回 `restart_requested: false`，已保存的配置会保持待应用状态，直到手动重启服务。
 
-Credential 优先级为 `COMMANDCODE_CREDENTIALS_FILE`、`COMMANDCODE_CREDENTIALS`/`COMMANDCODE_API_KEYS`、`COMMAND_CODE_API_KEY`/`COMMANDCODE_API_KEY`/`CMD_API_KEY`、CLI auth file。核心默认值：`HOST=127.0.0.1`、`PORT=9992`、`COMMANDCODE_UPSTREAM_MODE=auto`、`COMMANDCODE_ROUTING_POLICY=daily_burn_priority`、`COMMANDCODE_MAX_IN_FLIGHT_PER_CREDENTIAL=4`、`COMMANDCODE_CLI_VERSION=1.66.0`、`COMMANDCODE_TIMEOUT_MS=600000`、`COMMANDCODE_RETRY_MAX_ATTEMPTS=5`、`COMMANDCODE_RETRY_BACKOFF_MS=250`、`COMMANDCODE_EMPTY_VISIBLE_RESPONSE_POLICY=error_on_length`。对瞬时上游故障（429、5xx、超时）按指数退避重试，最多 `COMMANDCODE_RETRY_MAX_ATTEMPTS` 次；以 401/402/403 失败的凭据会在本次请求中被跳过并优先使用其他 key，一旦产生可见输出即停止重试。设置后 `BRIDGE_API_KEY` 保护 `/v1/*`；client 可使用 Bearer 或 `x-api-key`。`COMMANDCODE_UPSTREAM_MODE=auto` 在启动时探测 Provider API，套餐允许时（Provider $15/月或更高）使用官方 API；`provider` 强制官方 API；`alpha` 强制所有模型走 legacy `/alpha/generate`。设 `COMMANDCODE_ZDR=true` 会在 Provider API 请求中发送 `x-cmd-zdr: 1`（zero data retention）。用 `chmod 600` 保护 credential JSON。Balance alert 默认关闭。可选 `commandcode-router` 用于多个 bridge host 的 least-in-flight routing。
+Credential 优先级为 `COMMANDCODE_CREDENTIALS_FILE`、`COMMANDCODE_CREDENTIALS`/`COMMANDCODE_API_KEYS`、`COMMAND_CODE_API_KEY`/`COMMANDCODE_API_KEY`/`CMD_API_KEY`、CLI auth file。核心默认值：`HOST=127.0.0.1`、`PORT=9992`、`COMMANDCODE_UPSTREAM_MODE=auto`、`COMMANDCODE_ROUTING_POLICY=daily_burn_priority`、`COMMANDCODE_MAX_IN_FLIGHT_PER_CREDENTIAL=4`、`COMMANDCODE_CLI_VERSION=1.74.0`、`COMMANDCODE_TIMEOUT_MS=600000`、`COMMANDCODE_RETRY_MAX_ATTEMPTS=5`、`COMMANDCODE_RETRY_BACKOFF_MS=250`、`COMMANDCODE_EMPTY_VISIBLE_RESPONSE_POLICY=error_on_length`。对瞬时上游故障（429、5xx、超时）按指数退避重试，最多 `COMMANDCODE_RETRY_MAX_ATTEMPTS` 次；以 401/402/403 失败的凭据会在本次请求中被跳过并优先使用其他 key，一旦产生可见输出即停止重试。设置后 `BRIDGE_API_KEY` 保护 `/v1/*`；client 可使用 Bearer 或 `x-api-key`。`COMMANDCODE_UPSTREAM_MODE=auto` 在启动时探测 Provider API，套餐允许时（Provider $15/月或更高）使用官方 API；`provider` 强制官方 API；`alpha` 强制所有模型走 legacy `/alpha/generate`。设 `COMMANDCODE_ZDR=true` 会在 Provider API 请求中发送 `x-cmd-zdr: 1`（zero data retention）。用 `chmod 600` 保护 credential JSON。Balance alert 默认关闭。可选 `commandcode-router` 用于多个 bridge host 的 least-in-flight routing。
 
 ## 工作原理
 

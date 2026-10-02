@@ -9,20 +9,21 @@ describe("configuration and model aliases", () => {
     expect(config.defaultModel).toBe("deepseek/deepseek-v4-pro");
   });
 
-  it("advertises CommandCode CLI 1.66.0 by default while allowing override", () => {
-    expect(loadBridgeConfig({ env: {} }).cliVersion).toBe("1.66.0");
+  it("advertises CommandCode CLI 1.74.0 by default while allowing override", () => {
+    expect(loadBridgeConfig({ env: {} }).cliVersion).toBe("1.74.0");
     expect(loadBridgeConfig({ env: { COMMANDCODE_CLI_VERSION: "1.14.0-test" } }).cliVersion).toBe(
       "1.14.0-test",
     );
   });
 
-  it("matches the exact CommandCode 1.66.0 canonical catalog and advertised prices", () => {
+  it("matches the exact CommandCode 1.74.0 canonical catalog and advertised prices", () => {
     const expectedPrices = new Map<string, [number, number]>([
       ["deepseek/deepseek-v4-pro", [0.66, 1.98]],
       ["deepseek/deepseek-v4-flash", [0.15, 0.6]],
       ["deepseek/deepseek-v4-flash-vision-exp", [0.15, 0.6]],
       ["deepseek/deepseek-v4-flash-fast", [0.28, 0.56]],
       ["deepseek/deepseek-v4.1-flash", [0.15, 0.6]],
+      ["deepseek/deepseek-v4.1-flash-fast", [0.16, 0.58]],
       ["moonshotai/Kimi-K3", [3, 15]],
       ["moonshotai/Kimi-K2.7-Code", [0.95, 4]],
       ["moonshotai/Kimi-K2.7-Code-Highspeed", [1.9, 8]],
@@ -64,8 +65,9 @@ describe("configuration and model aliases", () => {
       ["thinkingmachines/inkling-small", [0.5, 1.2]],
       ["poolside/laguna-s-2.1-free", [0, 0]],
       ["inclusionai/ling-3.0-flash-sante:free", [0, 0]],
+      ["inclusionai/ling-3.1-flash:free", [0, 0]],
       ["stealth/space-bunny-alpha", [0, 0]],
-      ["stealth/pixel-canary", [0, 0]],
+      ["claude-sonnet-5-5", [2, 10]],
       ["claude-sonnet-5", [2, 10]],
       ["claude-sonnet-4-6", [3, 15]],
       ["claude-fable-5-1", [10, 50]],
@@ -76,6 +78,7 @@ describe("configuration and model aliases", () => {
       ["claude-opus-4-7", [5, 25]],
       ["claude-haiku-4-5-20251001", [1, 5]],
       ["gpt-6-astra", [10, 50]],
+      ["gpt-6.1-sol", [2, 10]],
       ["gpt-6-sol", [2, 10]],
       ["gpt-6-luna", [0.1, 0.5]],
       ["gpt-5.6-sol", [5, 30]],
@@ -99,11 +102,11 @@ describe("configuration and model aliases", () => {
       ["meta/muse-spark-1.3-contributor", [0.1, 0.2]],
       ["xai/grok-4.5", [2, 6]],
       ["xai/grok-4.6", [2, 6]],
-      ["xai/grok-4.7", [1.2, 3.6]],
+      ["xai/grok-4.7", [2, 6]],
     ]);
     const catalog = loadBridgeConfig({ env: {} }).modelCatalog ?? [];
 
-    expect(catalog).toHaveLength(82);
+    expect(catalog).toHaveLength(85);
     expect(catalog.map((model) => model.id)).toEqual([...expectedPrices.keys()]);
     for (const model of catalog) {
       const match = model.notes?.match(/^\$(\d+(?:\.\d+)?)\/M in · \$(\d+(?:\.\d+)?)\/M out/);
@@ -112,13 +115,14 @@ describe("configuration and model aliases", () => {
     }
   });
 
-  it("matches the exact CommandCode 1.66.0 published context windows", () => {
+  it("matches the exact CommandCode 1.74.0 published context windows", () => {
     const expectedContextWindows = new Map<string, number | undefined>([
       ["deepseek/deepseek-v4-pro", 1_000_000],
       ["deepseek/deepseek-v4-flash", 1_000_000],
       ["deepseek/deepseek-v4-flash-vision-exp", 1_000_000],
       ["deepseek/deepseek-v4-flash-fast", 1_000_000],
       ["deepseek/deepseek-v4.1-flash", 1_000_000],
+      ["deepseek/deepseek-v4.1-flash-fast", 1_000_000],
       ["moonshotai/Kimi-K3", 1_000_000],
       ["moonshotai/Kimi-K2.7-Code", 256_000],
       ["moonshotai/Kimi-K2.7-Code-Highspeed", 262_000],
@@ -160,8 +164,9 @@ describe("configuration and model aliases", () => {
       ["thinkingmachines/inkling-small", 1_000_000],
       ["poolside/laguna-s-2.1-free", 256_000],
       ["inclusionai/ling-3.0-flash-sante:free", 262_144],
+      ["inclusionai/ling-3.1-flash:free", 262_144],
       ["stealth/space-bunny-alpha", 1_000_000],
-      ["stealth/pixel-canary", 262_144],
+      ["claude-sonnet-5-5", 1_000_000],
       ["claude-sonnet-5", 1_000_000],
       ["claude-sonnet-4-6", 1_000_000],
       ["claude-fable-5-1", 1_000_000],
@@ -172,6 +177,7 @@ describe("configuration and model aliases", () => {
       ["claude-opus-4-7", 1_000_000],
       ["claude-haiku-4-5-20251001", 200_000],
       ["gpt-6-astra", 1_050_000],
+      ["gpt-6.1-sol", 1_050_000],
       ["gpt-6-sol", 1_050_000],
       ["gpt-6-luna", 1_050_000],
       ["gpt-5.6-sol", 1_050_000],
@@ -272,7 +278,6 @@ describe("configuration and model aliases", () => {
     { id: "meituan/LongCat-2.0", contextWindow: 1_048_576 },
     { id: "stepfun/Step-5-Preview", contextWindow: 1_000_000 },
     { id: "stealth/space-bunny-alpha", contextWindow: 1_000_000 },
-    { id: "stealth/pixel-canary", contextWindow: 262_144 },
     { id: "claude-opus-5-5", contextWindow: 1_000_000 },
     { id: "gpt-6-sol", contextWindow: 1_050_000 },
     { id: "gpt-6-luna", contextWindow: 1_050_000 },
@@ -294,6 +299,43 @@ describe("configuration and model aliases", () => {
         contextWindow,
       });
       expect(merged.some((model) => model.id === "meituan/LongCat-2.0:free")).toBe(false);
+      expect(merged.find((model) => model.id === "deepseek/deepseek-v4-flash")?.enabled).toBe(true);
+    });
+
+    it("resolves its canonical id only after opt-in", () => {
+      const defaults = loadBridgeConfig({ env: {}, authPaths: [] });
+      expect(() => resolveModel(id, defaults)).toThrow(/not allowed/i);
+
+      const config = loadBridgeConfig({
+        env: { COMMANDCODE_ALLOWED_MODELS: id },
+        authPaths: [],
+      });
+      expect(resolveModel(id, config).upstreamModel).toBe(id);
+    });
+  });
+
+  describe.each([
+    { id: "deepseek/deepseek-v4.1-flash-fast", contextWindow: 1_000_000 },
+    { id: "inclusionai/ling-3.1-flash:free", contextWindow: 262_144 },
+    { id: "claude-sonnet-5-5", contextWindow: 1_000_000 },
+    { id: "gpt-6.1-sol", contextWindow: 1_050_000 },
+  ])("CLI 1.74.0 model $id", ({ id, contextWindow }) => {
+    it("merges disabled when upgrading a persisted catalog", () => {
+      // Given an established model and the retired Pixel Canary in persisted state.
+      const configured = [
+        { id: "deepseek/deepseek-v4-flash", enabled: true },
+        { id: "stealth/pixel-canary", enabled: true },
+      ];
+
+      // When the catalog gains the new built-ins.
+      const merged = mergeModelCatalog(configured, [], normalizeModelName, false);
+
+      // Then new models require opt-in and the retired Pixel Canary stays absent.
+      expect(merged.find((model) => model.id === id)).toMatchObject({
+        enabled: false,
+        contextWindow,
+      });
+      expect(merged.some((model) => model.id === "stealth/pixel-canary")).toBe(false);
       expect(merged.find((model) => model.id === "deepseek/deepseek-v4-flash")?.enabled).toBe(true);
     });
 
@@ -483,6 +525,7 @@ describe("configuration and model aliases", () => {
       "anthropic/claude-sonnet-4-20250514",
       "inclusionai/ling-3.0-flash-free",
       "meituan/LongCat-2.0:free",
+      "stealth/pixel-canary",
     ];
     const merged = mergeModelCatalog(
       retiredIds.map((id) => ({ id, enabled: true })),

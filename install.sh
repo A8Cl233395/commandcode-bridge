@@ -300,7 +300,7 @@ validate_env_value COMMANDCODE_API_KEY "$COMMANDCODE_API_KEY"
 require_command node
 NODE_MAJOR="$(node -p "Number(process.versions.node.split('.')[0])")"
 if [ "$NODE_MAJOR" -lt 22 ]; then
-  fail "Node.js >= 22 is required to install or use Command Code CLI 1.66.0; found $(node --version)"
+  fail "Node.js >= 22 is required to install or use Command Code CLI 1.74.0; found $(node --version)"
 fi
 
 require_command npm
@@ -382,7 +382,7 @@ fi
   write_env_line COMMANDCODE_DEFAULT_MODEL deepseek/deepseek-v4-pro
   write_env_line COMMANDCODE_ALLOWED_MODELS "$DEFAULT_ALLOWED_MODELS"
   write_env_line COMMANDCODE_ALLOW_UNKNOWN_MODELS false
-  write_env_line COMMANDCODE_CLI_VERSION 1.66.0
+  write_env_line COMMANDCODE_CLI_VERSION 1.74.0
   write_env_line COMMANDCODE_TIMEOUT_MS 300000
   write_env_line COMMANDCODE_EMPTY_VISIBLE_RESPONSE_POLICY error_on_length
   write_env_line COMMANDCODE_BALANCE_ALERT_ENABLED false
