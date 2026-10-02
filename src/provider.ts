@@ -154,6 +154,11 @@ export class CommandCodeProviderClient {
         else this.router.recordFailure(credential.id, { statusCode });
         finalized = true;
       };
+      const finalizeRelease = () => {
+        if (finalized) return;
+        this.router.release(credential.id);
+        finalized = true;
+      };
 
       try {
         const response = await this.fetchChat(body, credential, effectiveSignal);
@@ -163,14 +168,18 @@ export class CommandCodeProviderClient {
             response.statusText,
             await responseBody(response),
           );
-          finalizeFailure(response.status);
+          const fatal = isFatalCredFailure(response.status);
+          // Only credential-scoped failures may start a cooldown; provider-scoped
+          // statuses like 429/5xx hit every credential at once.
+          if (fatal) finalizeFailure(response.status);
+          else finalizeRelease();
           lastError = error;
           if (
             attempt < maxAttempts - 1 &&
             shouldRetryStatus(response.status) &&
             !effectiveSignal.aborted
           ) {
-            if (isFatalCredFailure(response.status)) fatalIds.add(credential.id);
+            if (fatal) fatalIds.add(credential.id);
             else retryableFailed.add(credential.id);
             await retryBackoff(attempt, this.config.commandCodeRetryBackoffMs ?? 250);
             continue;
@@ -182,7 +191,8 @@ export class CommandCodeProviderClient {
       } catch (error) {
         if (error instanceof CommandCodeHttpError && finalized) throw error;
         const statusCode = error instanceof CommandCodeHttpError ? error.status : undefined;
-        finalizeFailure(statusCode);
+        if (statusCode !== undefined && isFatalCredFailure(statusCode)) finalizeFailure(statusCode);
+        else finalizeRelease();
         lastError = error;
         if (
           attempt < maxAttempts - 1 &&
